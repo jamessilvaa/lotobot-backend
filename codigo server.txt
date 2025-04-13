@@ -9,11 +9,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Adicionando uma rota raiz
-app.get('/', (req, res) => {
-  res.json({ message: 'Backend do AI LotoBot funcionando! Use /update/:lottery ou /results/:lottery.' });
-});
-
 const LOTTERIES = {
   'Mega-Sena': 6,
   'Lotofácil': 15,
@@ -34,24 +29,25 @@ const updateLotteryResults = async (lottery) => {
   try {
     const chromeOptions = new (require('selenium-webdriver/chrome').Options)();
     chromeOptions.addArguments('--headless');
-    chromeOptions.addArguments('--disable-blink-features=AutomationControlled');
-    chromeOptions.addArguments('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36');
-    chromeOptions.addArguments('--no-sandbox');
-    chromeOptions.addArguments('--disable-dev-shm-usage');
-    chromeOptions.addArguments('--disable-gpu');
-    chromeOptions.addArguments('--window-size=1920,1080');
-    chromeOptions.addArguments('--disable-extensions');
-    chromeOptions.addArguments('--disable-infobars');
-    chromeOptions.addArguments('--disable-notifications');
-    chromeOptions.excludeSwitches(['enable-automation']);
+    chromeOptions.addArguments('--disable-blink-features=AutomationControlled'); // Evita detecção de automação
+    chromeOptions.addArguments('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'); // Define um user-agent realista
+    chromeOptions.addArguments('--no-sandbox'); // Necessário para alguns ambientes (como o Render)
+    chromeOptions.addArguments('--disable-dev-shm-usage'); // Evita problemas de memória em servidores
+    chromeOptions.addArguments('--disable-gpu'); // Evita problemas gráficos em modo headless
+    chromeOptions.addArguments('--window-size=1920,1080'); // Define um tamanho de janela realista
+    chromeOptions.addArguments('--disable-extensions'); // Desativa extensões que podem interferir
+    chromeOptions.addArguments('--disable-infobars'); // Desativa barras de informação
+    chromeOptions.addArguments('--disable-notifications'); // Desativa notificações
+    chromeOptions.excludeSwitches(['enable-automation']); // Remove flags de automação visíveis
     driver = await new Builder()
       .forBrowser('chrome')
       .setChromeOptions(chromeOptions)
       .build();
 
     await driver.get(url);
-    await driver.sleep(5000);
+    await driver.sleep(5000); // Espera adicional de 5 segundos para o JavaScript carregar os elementos
 
+    // Espera explícita até que o elemento esteja presente (máximo de 30 segundos)
     const resultContainer = await driver.wait(
       until.elementLocated(By.className(className)),
       30000
