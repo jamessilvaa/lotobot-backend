@@ -20,7 +20,7 @@ const LOTTERIES = {
 };
 
 const CONFIGS = {
-  'Mega-Sena': { filePath: 'mega_sena_results.csv', maxNum: 60, apiName: 'mega-sena' },
+  'Mega-Sena': { filePath: 'mega_sena_results.csv', maxNum: 60, apiName: 'megasena' },
   'Lotofácil': { filePath: 'lotofacil_results.csv', maxNum: 25, apiName: 'lotofacil' },
   'Lotomania': { filePath: 'lotomania_results.csv', maxNum: 100, apiName: 'lotomania' },
 };
@@ -32,8 +32,8 @@ const updateLotteryResults = async (lottery) => {
   const { filePath, apiName } = CONFIGS[lottery];
   const fullPath = path.join(__dirname, filePath);
   try {
-    const response = await axios.get(`https://loteriascaixa-api.herokuapp.com/api/${apiName}/latest`);
-    const { concurso, data, dezenas } = response.data;
+    const response = await axios.get(`https://apiloterias.com.br/app/resultado?loteria=${apiName}&token=34gPVAbIkxWVvJ8`);
+    const { numero_concurso, data_sorteio, dezenas } = response.data;
 
     // Garantir que o número de dezenas corresponde ao esperado
     if (dezenas.length !== LOTTERIES[lottery]) {
@@ -49,7 +49,7 @@ const updateLotteryResults = async (lottery) => {
     }
 
     const rows = csvData.split('\n').filter(row => row.trim());
-    const newRow = [...dezenas, concurso, data].join(',');
+    const newRow = [...dezenas, numero_concurso, data_sorteio].join(',');
     rows.push(newRow);
     await fs.writeFile(fullPath, rows.join('\n'));
 
