@@ -1,15 +1,14 @@
 const express = require('express');
-const { Builder, By, until } = require('selenium-webdriver');
-const chrome = require('chromedriver');
 const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
+const axios = require('axios');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Adicionando uma rota raiz
+// Rota raiz
 app.get('/', (req, res) => {
   res.json({ message: 'Backend do AI LotoBot funcionando! Use /update/:lottery ou /results/:lottery.' });
 });
@@ -21,63 +20,24 @@ const LOTTERIES = {
 };
 
 const CONFIGS = {
-  'Mega-Sena': { filePath: 'mega_sena_results.csv', maxNum: 60, url: 'https://loterias.caixa.gov.br/Paginas/Mega-Sena.aspx', className: 'numbers megasena' },
-  'Lotofácil': { filePath: 'lotofacil_results.csv', maxNum: 25, url: 'https://loterias.caixa.gov.br/Paginas/Lotofacil.aspx', className: 'simple-container lista-dezenas lotofacil' },
-  'Lotomania': { filePath: 'lotomania_results.csv', maxNum: 100, url: 'https://loterias.caixa.gov.br/Paginas/Lotomania.aspx', className: 'simple-container lista-dezenas lotomania' },
+  'Mega-Sena': { filePath: 'mega_sena_results.csv', maxNum: 60, apiName: 'mega-sena' },
+  'Lotofácil': { filePath: 'lotofacil_results.csv', maxNum: 25, apiName: 'lotofacil' },
+  'Lotomania': { filePath: 'lotomania_results.csv', maxNum: 100, apiName: 'lotomania' },
 };
 
 const updateLotteryResults = async (lottery) => {
-  const { filePath, url, className } = CONFIGS[lottery];
+  if (!CONFIGS[lottery]) {
+    return { success: false, message: 'Loteria inválida.' };
+  }
+  const { filePath, apiName } = CONFIGS[lottery];
   const fullPath = path.join(__dirname, filePath);
-  let driver;
-
   try {
-    const chromeOptions = new (require('selenium-webdriver/chrome').Options)();
-    chromeOptions.addArguments('--headless');
-    chromeOptions.addArguments('--disable-blink-features=AutomationControlled');
-    chromeOptions.addArguments('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36');
-    chromeOptions.addArguments('--no-sandbox');
-    chromeOptions.addArguments('--disable-dev-shm-usage');
-    chromeOptions.addArguments('--disable-gpu');
-    chromeOptions.addArguments('--window-size=1920,1080');
-    chromeOptions.addArguments('--disable-extensions');
-    chromeOptions.addArguments('--disable-infobars');
-    chromeOptions.addArguments('--disable-notifications');
-    chromeOptions.excludeSwitches(['enable-automation']);
-    driver = await new Builder()
-      .forBrowser('chrome')
-      .setChromeOptions(chromeOptions)
-      .build();
+    const response = await axios.get(`https://loteriascaixa-api.herokuapp.com/api/${apiName}/latest`);
+    const { concurso, data, dezenas } = response.data;
 
-    await driver.get(url);
-    await driver.sleep(5000);
-
-    const resultContainer = await driver.wait(
-      until.elementLocated(By.className(className)),
-      30000
-    );
-    const numberElements = await resultContainer.findElements(By.tagName('li'));
-    const numbers = [];
-    for (let elem of numberElements) {
-      const text = await elem.getText();
-      if (!isNaN(text)) numbers.push(parseInt(text));
-    }
-
-    if (numbers.length !== LOTTERIES[lottery]) {
-      throw new Error(`Número de bolas inválido para ${lottery}: ${numbers.length} encontrados.`);
-    }
-
-    const dateElements = await driver.findElements(By.className('ng-binding'));
-    let contestNumber = 'Desconhecido';
-    let drawDate = new Date().toISOString().split('T')[0];
-    for (let elem of dateElements) {
-      const text = await elem.getText();
-      const match = text.match(/Concurso (\d+) \((\d{2}\/\d{2}\/\d{4})\)/);
-      if (match) {
-        contestNumber = match[1];
-        drawDate = match[2];
-        break;
-      }
+    // Garantir que o número de dezenas corresponde ao esperado
+    if (dezenas.length !== LOTTERIES[lottery]) {
+      return { success: false, message: `Número de dezenas inválido para ${lottery}: ${dezenas.length} encontrados.` };
     }
 
     const headers = Array.from({ length: LOTTERIES[lottery] }, (_, i) => `Bola${i + 1}`).concat(['Concurso', 'Data']);
@@ -89,15 +49,13 @@ const updateLotteryResults = async (lottery) => {
     }
 
     const rows = csvData.split('\n').filter(row => row.trim());
-    const newRow = [...numbers, contestNumber, drawDate].join(',');
+    const newRow = [...dezenas, concurso, data].join(',');
     rows.push(newRow);
     await fs.writeFile(fullPath, rows.join('\n'));
 
     return { success: true, message: `Resultados de ${lottery} atualizados.` };
   } catch (error) {
     return { success: false, message: `Erro ao atualizar ${lottery}: ${error.message}` };
-  } finally {
-    if (driver) await driver.quit();
   }
 };
 
