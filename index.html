@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI LotoBot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.8/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const LOTTERIES = {
+      'Mega-Sena': 6,
+      'Lotofácil': 15,
+      'Lotomania': 20,
+    };
+
+    const CONFIGS = {
+      'Mega-Sena': { filePath: 'mega_sena_results.csv', maxNum: 60 },
+      'Lotofácil': { filePath: 'lotofacil_results.csv', maxNum: 25 },
+      'Lotomania': { filePath: 'lotomania_results.csv', maxNum: 100 },
+    };
+
+    const App = () => {
+      const [lotteryType, setLotteryType] = useState('Mega-Sena');
+      const [numGames, setNumGames] = useState(5);
+      const [logs, setLogs] = useState([]);
+      const [progress, setProgress] = useState(0);
+      const [isProcessing, setIsProcessing] = useState(false);
+      const [lastUpdate, setLastUpdate] = useState(localStorage.getItem('lastUpdate') || null);
+
+      const addLog = (message) => {
+        setLogs((prev) => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
+      };
+
+      const updateProgress = (value) => {
+        setProgress(value);
+      };
+
+      const updateAllLotteryResults = async () => {
+        addLog('Iniciando atualização automática dos resultados...');
+        const steps = Object.keys(CONFIGS).length;
+        const stepValue = 100 / steps;
+        updateProgress(0);
+
+        for (const lottery of Object.keys(CONFIGS)) {
+          const startTime = Date.now();
+          addLog(`Atualizando resultados de ${lottery}...`);
+          try {
+            const response = await axios.get(`https://lotobot-backend.onrender.com/${lottery}`);
+            if (response.data.success) {
+              addLog(response.data.message);
+            } else {
+              addLog(response.data.message);
+            }
+          } catch (error) {
+            addLog(`Erro ao atualizar ${lottery}: ${error.message}`);
+          }
+          addLog(`Tempo para atualizar resultados: ${(Date.now() - startTime) / 1000} segundos`);
+          updateProgress(progress + stepValue);
+        }
+
+        const now = new Date().toISOString();
+        localStorage.setItem('lastUpdate', now);
+        setLastUpdate(now);
+        addLog('Atualização automática concluída.');
+      };
+
+      const loadResults = async (lottery) => {
+        try {
+          const response = await axios.get(`https://lotobot-backend.onrender.com/${lottery}`);
+          if (response.data.success) {
+            return response.data.data;
+          } else {
+            addLog(response.data.message);
+            return [];
+          }
+        } catch (error) {
+          addLog(`Erro ao carregar resultados de ${lottery}: ${error.message}`);
+          return [];
+        }
+      };
+
+      const generateRandomGames = (lottery, maxNum, numGames) => {
+        const startTime = Date.now();
+        addLog(`Gerando ${numGames} jogos aleatórios para ${lottery}...`);
+        const games = [];
+
+        for (let i = 0; i < numGames; i++) {
+          const numbers = new Set();
+          while (numbers.size < LOTTERIES[lottery]) {
+            numbers.add(Math.floor(Math.random() * maxNum) + 1);
+          }
+          const game = [...numbers].sort((a, b) => a - b);
+          games.push(game);
+          addLog(`Jogo ${i + 1}: [${game.join(', ')}]`);
+        }
+
+        addLog(`Tempo para gerar jogos: ${(Date.now() - startTime) / 1000} segundos`);
+        return games;
+      };
+
+      const updateSpreadsheet = async (games, lottery) => {
+        const startTime = Date.now();
+        addLog('Gerando arquivo .xlsx com os jogos...');
+
+        try {
+          const headers = Array.from({ length: LOTTERIES[lottery] }, (_, i) => `Bola${i + 1}`);
+          const worksheetData = [headers, ...games];
+
+          const workbook = new XLSX.utils.book_new();
+          const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+          XLSX.utils.book_append_sheet(workbook, worksheet, 'Jogos');
+
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          XLSX.writeFile(workbook, `${lottery}_${numGames}_jogos_${timestamp}.xlsx`);
+
+          addLog(`Arquivo .xlsx gerado com sucesso: ${lottery}_${numGames}_jogos_${timestamp}.xlsx`);
+          addLog(`Tempo para gerar arquivo: ${(Date.now() - startTime) / 1000} segundos`);
+          return true;
+        } catch (error) {
+          addLog(`Erro ao gerar arquivo .xlsx: ${error.message}`);
+          return false;
+        }
+      };
+
+      const s2ab = (s) => {
+        const buf = new ArrayBuffer(s.length);
+        const view = new Uint8Array(buf);
+        for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+        return buf;
+      };
+
+      const main = async () => {
+        setIsProcessing(true);
+        setLogs([]);
+        updateProgress(0);
+        const steps = 3;
+        const stepValue = 100 / steps;
+
+        const { maxNum } = CONFIGS[lotteryType];
+        const results = await loadResults(lotteryType);
+        if (!results || results.length === 0) {
+          addLog('Não foi possível carregar os resultados.');
+          setIsProcessing(false);
+          return;
+        }
+        updateProgress(stepValue);
+
+        const games = generateRandomGames(lotteryType, maxNum, numGames);
+        updateProgress(stepValue * 2);
+
+        if (!(await updateSpreadsheet(games, lotteryType))) {
+          setIsProcessing(false);
+          return;
+        }
+        updateProgress(stepValue * 3);
+
+        setIsProcessing(false);
+      };
+
+      useEffect(() => {
+        const lastUpdateDate = lastUpdate ? new Date(lastUpdate) : null;
+        const now = new Date();
+        const oneDayInMs = 24 * 60 * 60 * 1000;
+        if (!lastUpdateDate || (now - lastUpdateDate) > oneDayInMs) {
+          updateAllLotteryResults();
+        }
+      }, []);
+
+      return (
+        <div className="w-full max-w-4xl p-6 bg-gray-800 rounded-lg shadow-lg">
+          <h1 className="text-3xl font-bold text-green-400 mb-6 text-center">AI LotoBot</h1>
+
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-2">Selecione a Loteria:</label>
+              <select
+                value={lotteryType}
+                onChange={(e) => setLotteryType(e.target.value)}
+                className="w-full p-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+                disabled={isProcessing}
+              >
+                {Object.keys(CONFIGS).map((lottery) => (
+                  <option key={lottery} value={lottery}>{lottery}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-2">Número de Jogos:</label>
+              <select
+                value={numGames}
+                onChange={(e) => setNumGames(parseInt(e.target.value))}
+                className="w-full p-2 bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+                disabled={isProcessing}
+              >
+                {[5, 10, 20, 50, 100].map((num) => (
+                  <option key={num} value={num}>{num}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-4 mb-6">
+            <button
+              onClick={main}
+              className={`flex-1 py-2 px-4 rounded font-bold text-white ${isProcessing ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+              disabled={isProcessing}
+            >
+              {isProcessing ? 'Processando...' : 'Iniciar'}
+            </button>
+            <button
+              onClick={updateAllLotteryResults}
+              className={`flex-1 py-2 px-4 rounded font-bold text-white ${isProcessing ? 'bg-orange-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'}`}
+              disabled={isProcessing}
+            >
+              Atualizar Resultados
+            </button>
+            <button
+              onClick={() => setLogs([])}
+              className="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-700 rounded font-bold"
+              disabled={isProcessing}
+            >
+              Limpar Tela
+            </button>
+          </div>
+
+          <div className="mb-6">
+            <div className="w-full bg-gray-700 rounded-full h-4">
+              <div
+                className="bg-green-400 h-4 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="bg-gray-700 p-4 rounded-lg h-96 overflow-y-auto">
+            {logs.length === 0 ? (
+              <p className="text-gray-400">Nenhum log disponível.</p>
+            ) : (
+              logs.map((log, index) => (
+                <p key={index} className="text-sm">{log}</p>
+              ))
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
