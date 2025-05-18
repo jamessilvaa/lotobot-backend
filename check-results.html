@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conferência de Jogos - AI LotoBot</title>
+  <style>
+    :root {
+      --primary-color: #007bff;
+      --secondary-color: #6c757d;
+      --success-color: #28a745;
+      --danger-color: #dc3545;
+      --warning-color: #ffc107;
+      --info-color: #17a2b8;
+      --light-color: #f8f9fa;
+      --dark-color: #343a40;
+      --neon-blue: #00bfff;
+      --neon-green: #39ff14;
+      --background-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #f0f0f0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    h1 {
+      color: var(--neon-blue);
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+    }
+    
+    .container {
+      background-color: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      padding: 20px;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+    }
+    
+    .summary {
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--neon-blue);
+    }
+    
+    .summary h2 {
+      margin-top: 0;
+      color: var(--neon-blue);
+      font-size: 1.2rem;
+    }
+    
+    .summary-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    .stat-box {
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 5px;
+      padding: 10px;
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+    
+    .stat-box h3 {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-color);
+    }
+    
+    .stat-box p {
+      margin: 5px 0 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--neon-green);
+    }
+    
+    .results-container {
+      height: 400px;
+      overflow-y: auto;
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .result-card {
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--primary-color);
+      transition: all 0.3s ease;
+    }
+    
+    .result-card:hover {
+      transform: translateX(5px);
+      box-shadow: 0 0 10px rgba(0, 191, 255, 0.3);
+    }
+    
+    .result-card h3 {
+      margin: 0 0 10px;
+      color: var(--neon-blue);
+      font-size: 1.1rem;
+    }
+    
+    .result-card p {
+      margin: 5px 0;
+      font-size: 0.9rem;
+    }
+    
+    .result-card .numbers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    
+    .number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.8rem;
+      background-color: var(--secondary-color);
+    }
+    
+    .number.matched {
+      background-color: var(--success-color);
+      box-shadow: 0 0 5px var(--success-color);
+    }
+    
+    .back-button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin-top: 20px;
+      transition: all 0.3s ease;
+    }
+    
+    .back-button:hover {
+      background-color: var(--neon-blue);
+      box-shadow: 0 0 10px var(--neon-blue);
+    }
+    
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+    }
+    
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid var(--neon-blue);
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Scrollbar customization */
+    .results-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .results-container::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+    
+    .results-container::-webkit-scrollbar-thumb {
+      background: var(--primary-color);
+      border-radius: 10px;
+    }
+    
+    .results-container::-webkit-scrollbar-thumb:hover {
+      background: var(--neon-blue);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+      }
+      
+      .summary-stats {
+        flex-direction: column;
+      }
+      
+      .stat-box {
+        min-width: auto;
+      }
+      
+      .results-container {
+        height: 350px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Conferência de Jogos</h1>
+  
+  <div class="container">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Analisando jogos...</p>
+    </div>
+    
+    <div id="content" style="display: none;">
+      <div class="summary">
+        <h2 id="lottery-name">Mega-Sena</h2>
+        <div class="summary-stats" id="summary-stats">
+          <!-- Estatísticas serão inseridas aqui -->
+        </div>
+      </div>
+      
+      <div class="results-container" id="results-container">
+        <!-- Resultados serão inseridos aqui -->
+      </div>
+    </div>
+    
+    <button class="back-button" onclick="window.close()">Voltar</button>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Definir limites mínimos de acertos para cada loteria
+      const MIN_MATCHES = {
+        'Mega-Sena': 4,
+        'Lotofácil': 11,
+        'Lotomania': 16
+      };
+      
+      // Tentar carregar os dados do localStorage
+      const checkData = JSON.parse(localStorage.getItem('checkData'));
+      
+      if (!checkData) {
+        showError('Nenhum dado encontrado para conferência. Por favor, gere jogos primeiro.');
+        return;
+      }
+      
+      const { lottery, games, historicalResults, config } = checkData;
+      
+      // Atualizar o nome da loteria na página
+      document.getElementById('lottery-name').textContent = lottery;
+      
+      // Processar os jogos e verificar acertos
+      processGames(games, historicalResults, lottery, config, MIN_MATCHES[lottery]);
+    });
+    
+    function processGames(games, historicalResults, lottery, config, minMatches) {
+      // Converter resultados históricos para um formato mais fácil de trabalhar
+      const historicalSets = historicalResults.map(result => {
+        const numbers = [];
+        for (let i = 1; i <= config.numbers; i++) {
+          const num = parseInt(result[`Bola${i}`]);
+          if (!isNaN(num)) numbers.push(num);
+        }
+        return {
+          concurso: result.Concurso,
+          data: result.Data,
+          numbers: numbers
+        };
+      });
+      
+      // Estatísticas de acertos
+      const matchStats = {};
+      for (let i = minMatches; i <= config.numbers; i++) {
+        matchStats[i] = 0;
+      }
+      
+      // Resultados com pontuação mínima ou superior
+      const significantResults = [];
+      
+      // Verificar cada jogo contra todos os resultados históricos
+      games.forEach((game, gameIndex) => {
+        const gameMatches = [];
+        
+        historicalSets.forEach((historicalSet, histIndex) => {
+          // Verificar acertos
+          const matchingNumbers = game.filter(num => historicalSet.numbers.includes(num));
+          const matchCount = matchingNumbers.length;
+          
+          // Se atingiu o mínimo de acertos, registrar
+          if (matchCount >= minMatches) {
+            gameMatches.push({
+              gameIndex: gameIndex,
+              concurso: historicalSet.concurso,
+              data: historicalSet.data,
+              matchCount: matchCount,
+              matchingNumbers: matchingNumbers,
+              distance: historicalResults.length - histIndex - 1 // Quantos concursos atrás
+            });
+            
+            // Incrementar estatística
+            matchStats[matchCount]++;
+          }
+        });
+        
+        // Se encontrou acertos significativos, adicionar aos resultados
+        if (gameMatches.length > 0) {
+          // Ordenar por número de acertos (decrescente)
+          gameMatches.sort((a, b) => b.matchCount - a.matchCount);
+          
+          significantResults.push({
+            gameNumber: gameIndex + 1,
+            game: game,
+            matches: gameMatches
+          });
+        }
+      });
+      
+      // Ordenar resultados por número do jogo (crescente)
+significantResults.sort((a, b) => a.gameNumber - b.gameNumber);
+
+      
+      // Calcular estatísticas gerais
+      const totalSignificantMatches = Object.values(matchStats).reduce((a, b) => a + b, 0);
+      let closestMatch = null;
+      
+      if (significantResults.length > 0) {
+        // Encontrar o jogo com acertos mais recentes
+        let minDistance = Infinity;
+        significantResults.forEach(result => {
+          result.matches.forEach(match => {
+            if (match.distance < minDistance) {
+              minDistance = match.distance;
+              closestMatch = {
+                gameNumber: result.gameNumber,
+                concurso: match.concurso,
+                distance: match.distance,
+                matchCount: match.matchCount
+              };
+            }
+          });
+        });
+      }
+      
+      // Exibir resultados na página
+      displayResults(significantResults, matchStats, totalSignificantMatches, closestMatch, lottery, minMatches, config.numbers);
+    }
+    
+    function displayResults(significantResults, matchStats, totalMatches, closestMatch, lottery, minMatches, maxNumbers) {
+      // Ocultar loading e mostrar conteúdo
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+      
+      // Exibir estatísticas de resumo
+      const summaryStatsContainer = document.getElementById('summary-stats');
+      summaryStatsContainer.innerHTML = '';
+      
+      // Adicionar estatísticas para cada nível de acertos
+      for (let i = minMatches; i <= maxNumbers; i++) {
+        const statBox = document.createElement('div');
+        statBox.className = 'stat-box';
+        statBox.innerHTML = `
+          <h3>${i} Acertos:</h3>
+          <p>${matchStats[i] || 0}</p>
+        `;
+        summaryStatsContainer.appendChild(statBox);
+      }
+      
+      // Adicionar estatística de total
+      const totalBox = document.createElement('div');
+      totalBox.className = 'stat-box';
+      totalBox.innerHTML = `
+        <h3>Total de Acertos:</h3>
+        <p>${totalMatches}</p>
+      `;
+      summaryStatsContainer.appendChild(totalBox);
+      
+            // Adicionar informação sobre o jogo mais recente com acertos
+            if (closestMatch) {
+                const recentBox = document.createElement('div');
+                recentBox.className = 'stat-box';
+                recentBox.style.flexBasis = '100%';
+                recentBox.innerHTML = `
+                  <h3>Acerto mais recente:</h3>
+                  <p>Há ${closestMatch.distance} concursos atrás</p>
+                `;
+                summaryStatsContainer.appendChild(recentBox);
+              }
+              
+              // Exibir resultados detalhados
+              const resultsContainer = document.getElementById('results-container');
+              resultsContainer.innerHTML = '';
+              
+              if (significantResults.length === 0) {
+                resultsContainer.innerHTML = `
+                  <div class="result-card">
+                    <h3>Nenhum resultado significativo encontrado</h3>
+                    <p>Nenhum dos jogos gerados atingiu o mínimo de ${minMatches} acertos em concursos anteriores.</p>
+                  </div>
+                `;
+                return;
+              }
+              
+              // Adicionar título para a seção de resultados
+              const resultsTitle = document.createElement('h3');
+              resultsTitle.style.margin = '0 0 15px 0';
+              resultsTitle.style.color = 'var(--neon-green)';
+              resultsTitle.textContent = 'RESULTADOS COM PONTUAÇÃO:';
+              resultsContainer.appendChild(resultsTitle);
+              
+              // Adicionar cada resultado significativo
+              significantResults.forEach(result => {
+                // Pegar o melhor resultado (maior número de acertos)
+                const bestMatch = result.matches.reduce((best, current) => 
+                  current.matchCount > best.matchCount ? current : best, result.matches[0]);
+                
+                const resultCard = document.createElement('div');
+                resultCard.className = 'result-card';
+                
+                // Definir cor da borda baseada no número de acertos
+                const maxPossibleMatches = maxNumbers;
+                const matchRatio = bestMatch.matchCount / maxPossibleMatches;
+                
+                if (matchRatio >= 0.8) {
+                  resultCard.style.borderLeftColor = 'var(--success-color)';
+                } else if (matchRatio >= 0.6) {
+                  resultCard.style.borderLeftColor = 'var(--warning-color)';
+                } else if (matchRatio >= 0.4) {
+                  resultCard.style.borderLeftColor = 'var(--info-color)';
+                }
+                
+                // Criar o conteúdo do card
+                resultCard.innerHTML = `
+                  <h3>JOGO - ${result.gameNumber.toString().padStart(2, '0')} - Concurso:${bestMatch.concurso} Total Acertos: ${bestMatch.matchCount}</h3>
+                  <div class="numbers">
+                    ${result.game.map(num => {
+                      const isMatched = bestMatch.matchingNumbers.includes(num);
+                      return `<div class="number ${isMatched ? 'matched' : ''}">${num}</div>`;
+                    }).join('')}
+                  </div>
+                  <p style="margin-top: 10px; font-size: 0.8rem; color: var(--secondary-color);">
+                    Este jogo também pontuou em ${result.matches.length} concursos diferentes.
+                  </p>
+                `;
+                
+                // Adicionar detalhes expandíveis para todos os concursos onde este jogo pontuou
+                if (result.matches.length > 1) {
+                  const detailsContainer = document.createElement('details');
+                  detailsContainer.style.marginTop = '10px';
+                  
+                  const summary = document.createElement('summary');
+                  summary.textContent = 'Ver todos os concursos';
+                  summary.style.cursor = 'pointer';
+                  summary.style.color = 'var(--neon-blue)';
+                  detailsContainer.appendChild(summary);
+                  
+                  const matchesList = document.createElement('ul');
+                  matchesList.style.marginTop = '5px';
+                  matchesList.style.paddingLeft = '20px';
+                  
+                  result.matches.forEach(match => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `Concurso ${match.concurso} (${match.data}): ${match.matchCount} acertos`;
+                    matchesList.appendChild(listItem);
+                  });
+                  
+                  detailsContainer.appendChild(matchesList);
+                  resultCard.appendChild(detailsContainer);
+                }
+                
+                resultsContainer.appendChild(resultCard);
+              });
+            }
+            
+            function showError(message) {
+              document.getElementById('loading').style.display = 'none';
+              document.getElementById('content').style.display = 'block';
+              
+              const resultsContainer = document.getElementById('results-container');
+              resultsContainer.innerHTML = `
+                <div class="result-card" style="border-left-color: var(--danger-color);">
+                  <h3>Erro</h3>
+                  <p>${message}</p>
+                </div>
+              `;
+              
+              // Limpar estatísticas
+              document.getElementById('summary-stats').innerHTML = '';
+            }
+          </script>
+        </body>
+        </html>
+        

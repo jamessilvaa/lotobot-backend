@@ -1,0 +1,962 @@
+/* AI LotoBot - Tema futurista com estilo de robô inteligente */
+:root {
+    --primary-color: #0077ff;
+    --primary-glow: 0 0 15px #0077ff;
+    --secondary-color: #00ff9d;
+    --secondary-glow: 0 0 15px #00ff9d;
+    --dark-color: #0a0a1a;
+    --light-color: #f8f9fa;
+    --text-color: #e0e0e0;
+    --border-radius: 12px;
+    --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    --transition: all 0.3s ease;
+    --neon-blue: #0077ff;
+    --neon-green: #00ff9d;
+    --metal-silver: linear-gradient(145deg, #c0c0c0, #e0e0e0, #a0a0a0);
+}
+
+/* Estilos gerais */
+html, body {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+}
+
+.container, .logs {
+    overflow: visible !important;
+    height: auto !important;
+}
+
+#logs {
+    overflow-y: auto !important;
+    min-height: 250px;
+    height: auto !important;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--dark-color);
+    background-image:
+        radial-gradient(circle at 25% 25%, rgba(0, 119, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(0, 255, 157, 0.1) 0%, transparent 50%);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    height: auto; /* Adicionado */
+    overflow-y: auto; /* Adicionado */
+}
+
+/* Cabeçalho com ícone de IA */
+h1 {
+    color: var(--light-color);
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    text-shadow: 0 0 10px rgba(0, 119, 255, 0.5);
+    position: relative;
+    padding-left: 60px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.ia-badge {
+    position: absolute;
+    left: 0;
+    width: 50px;
+    height: 50px;
+    background: var(--metal-silver);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--dark-color);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    animation: pulse-silver 2s infinite;
+}
+
+@keyframes pulse-silver {
+    0% {
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    }
+}
+
+.container {
+    background-color: rgba(10, 10, 26, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    width: 85%;
+    max-width: 595px;
+    margin-bottom: 25px;
+    position: relative;
+    border: 1px solid rgba(0, 119, 255, 0.3);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    
+    /* Novas propriedades para altura fixa e rolagem */
+    max-height: 80vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+ }
+ 
+
+.container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-green), var(--neon-blue));
+    animation: scanline 3s linear infinite;
+}
+
+@keyframes scanline {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Controles de formulário */
+select, input[type="number"] {
+    padding: 12px 20px;
+    margin: 8px 0;
+    border-radius: 25px;
+    border: 1px solid var(--neon-blue);
+    font-size: 16px;
+    background-color: rgba(10, 10, 26, 0.8);
+    color: var(--light-color);
+    transition: var(--transition);
+    outline: none;
+    box-shadow: 0 0 5px var(--neon-blue);
+}
+
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230077ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    padding-right: 45px;
+}
+
+select:hover, input[type="number"]:hover {
+    box-shadow: 0 0 15px var(--neon-blue);
+}
+
+select:focus, input[type="number"]:focus {
+    box-shadow: 0 0 20px var(--neon-blue);
+}
+
+input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Botões */
+button {
+    padding: 12px 20px;
+    margin: 8px 0;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    cursor: pointer;
+    transition: var(--transition);
+    background-color: transparent;
+    color: var(--light-color);
+    border: 1px solid var(--neon-blue);
+    box-shadow: 0 0 10px var(--neon-blue);
+}
+
+button:hover {
+    box-shadow: 0 0 20px var(--neon-blue);
+}
+
+/* Botão de atualização resultados - redondo com fundo girando */
+.update-button-container {
+    width: 150px;
+    height: 150px;
+    margin: 20px auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.update-button-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(var(--neon-blue), var(--neon-green), var(--neon-blue));
+    animation: rotate 10s linear infinite;
+    box-shadow: 0 0 25px var(--neon-blue), 0 0 25px var(--neon-green);
+    z-index: 1;
+}
+
+button[onclick="updateAllLotteryResults()"] {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background-color: rgba(10, 10, 26, 0.9);
+    border: none;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+}
+
+@keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Botões de loteria - redondos e pulsantes */
+.lottery-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.lottery-button {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: rgba(10, 10, 26, 0.9);
+    border: 2px solid var(--neon-blue);
+    color: var(--light-color);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 0 10px var(--neon-blue);
+    animation: pulse 2s infinite;
+}
+
+.lottery-button:hover {
+    box-shadow: 0 0 20px var(--neon-blue);
+    transform: scale(1.05);
+}
+
+.lottery-button.active {
+    background-color: var(--neon-blue);
+    color: white;
+    box-shadow: 0 0 15px var(--neon-blue);
+}
+
+/* Botão Limpar - redondo e pulsante */
+.clear-button {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(255, 58, 94, 0.2);
+    border: 2px solid #ff3a5e;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 0 10px #ff3a5e;
+    animation: pulse-red 2s infinite;
+}
+
+.clear-button:hover {
+    background-color: rgba(255, 58, 94, 0.4);
+    box-shadow: 0 0 20px #ff3a5e;
+    transform: scale(1.05);
+}
+
+@keyframes pulse-red {
+    0% {
+        box-shadow: 0 0 5px #ff3a5e;
+    }
+    50% {
+        box-shadow: 0 0 20px #ff3a5e;
+    }
+    100% {
+        box-shadow: 0 0 5px #ff3a5e;
+    }
+}
+
+/* Grupo de botões */
+.button-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin: 20px 0;
+    flex-wrap: wrap; /* Para permitir quebra em telas muito pequenas */
+ }
+ 
+
+#generateButton {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: rgba(10, 10, 26, 0.9);
+    border: 2px solid var(--neon-blue);
+    color: var(--light-color);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 0 10px var(--neon-blue);
+    animation: pulse 2s infinite;
+}
+
+#generateButton:hover {
+    background-color: var(--neon-blue);
+    box-shadow: 0 0 20px var(--neon-blue);
+    transform: scale(1.05);
+}
+
+/* Animação de pulso para botões */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 5px var(--neon-blue);
+    }
+    50% {
+        box-shadow: 0 0 20px var(--neon-blue);
+    }
+    100% {
+        box-shadow: 0 0 5px var(--neon-blue);
+    }
+}
+
+/* Área de logs - CORRIGIDO */
+.logs {
+    margin-top: 25px;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: var(--neon-green);
+    border: 1px solid var(--neon-blue);
+    border-radius: var(--border-radius);
+    min-height: 250px;
+    height: auto;
+    max-height: none; /* Removido o limite máximo */
+    overflow-y: auto;
+    font-size: 14px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    box-shadow: inset 0 0 10px var(--neon-blue);
+    width: 100%;
+    box-sizing: border-box;
+    display: block; /* Adicionado */
+}
+
+.logs::-webkit-scrollbar {
+    width: 8px;
+}
+
+.logs::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+
+.logs::-webkit-scrollbar-thumb {
+    background: var(--neon-blue);
+    border-radius: 10px;
+    box-shadow: 0 0 5px var(--neon-blue);
+}
+
+/* Barra de progresso */
+.progress-container {
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    margin: 15px 0;
+    overflow: hidden;
+    border: 1px solid var(--neon-blue);
+}
+
+.progress-bar {
+    width: 0%;
+    height: 10px;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 10px var(--neon-green);
+}
+
+.progress-bar::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+    );
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Última atualização */
+.last-update {
+    font-size: 13px;
+    color: var(--neon-green);
+    margin: 10px 0;
+    text-align: center;
+    text-shadow: 0 0 5px var(--neon-green);
+}
+
+/* Efeitos de circuitos para fundo de robô */
+.circuit-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    opacity: 0.1;
+    background-image:
+        linear-gradient(90deg, var(--neon-blue) 1px, transparent 1px),
+        linear-gradient(0deg, var(--neon-blue) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+}
+
+/* Efeito de linhas de código para o fundo - CORRIGIDO */
+.code-lines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.code-line {
+    position: fixed;
+    color: rgba(0, 119, 255, 0.2);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    white-space: nowrap;
+    animation: codeDrop linear infinite;
+    pointer-events: none;
+}
+
+@keyframes codeDrop {
+    0% {
+        transform: translateY(-100%);
+    }
+    100% {
+        transform: translateY(100vh);
+    }
+}
+
+/* Círculos de energia */
+.energy-circles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -3;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.energy-circle {
+    position: fixed;
+    border-radius: 50%;
+    border: 2px solid var(--neon-blue);
+    opacity: 0;
+    pointer-events: none;
+    animation: energyPulse 4s ease-out infinite;
+}
+
+@keyframes energyPulse {
+    0% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(3);
+        opacity: 0;
+    }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+        padding-left: 60px;
+    }
+    
+    .ia-badge {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    select, button, input[type="number"] {
+        width: 100%;
+        margin: 8px 0;
+    }
+
+    .logs {
+        min-height: 200px;
+        max-height: 350px;
+    }
+    
+    .update-button-container {
+        width: 120px;
+        height: 120px;
+    }
+    
+    button[onclick="updateAllLotteryResults()"] {
+        width: 100px;
+        height: 100px;
+        font-size: 14px;
+    }
+    
+    .lottery-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .lottery-button {
+        width: 80px;
+        height: 80px;
+        font-size: 12px;
+    }
+    
+    .button-group {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    #generateButton {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .clear-button {
+        width: 70px;
+        height: 70px;
+    }
+}
+
+/* Checkbox para opção de IA */
+.ai-option {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.ai-option input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 50px;
+    height: 24px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    outline: none;
+    transition: var(--transition);
+    border: 1px solid var(--neon-blue);
+}
+
+.ai-option input[type="checkbox"]::before {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    top: 1px;
+    left: 2px;
+    background-color: var(--neon-blue);
+    transition: var(--transition);
+    box-shadow: 0 0 5px var(--neon-blue);
+}
+
+.ai-option input[type="checkbox"]:checked {
+    background-color: rgba(0, 255, 157, 0.2);
+    border-color: var(--neon-green);
+}
+
+.ai-option input[type="checkbox"]:checked::before {
+    left: 27px;
+    background-color: var(--neon-green);
+    box-shadow: 0 0 10px var(--neon-green);
+}
+
+.ai-option label {
+    margin-left: 10px;
+    font-size: 16px;
+    color: var(--light-color);
+    cursor: pointer;
+}
+
+/* Tooltip para informações adicionais */
+.tooltip {
+    position: relative;
+    display: inline-block;
+    margin-left: 8px;
+    cursor: help;
+}
+
+.tooltip .icon {
+    width: 18px;
+    height: 18px;
+    background-color: var(--neon-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.tooltip .tooltip-text {
+    visibility: hidden;
+    width: 250px;
+    background-color: rgba(10, 10, 26, 0.95);
+    color: var(--light-color);
+    text-align: center;
+    border-radius: var(--border-radius);
+    padding: 10px;
+    position: absolute;
+    z-index: 100;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    border: 1px solid var(--neon-blue);
+    box-shadow: 0 0 15px rgba(0, 119, 255, 0.5);
+    font-size: 14px;
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Animação de carregamento */
+.loading {
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 20px;
+}
+
+.loading div {
+    position: absolute;
+    top: 8px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--neon-blue);
+    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+
+.loading div:nth-child(1) {
+    left: 8px;
+    animation: loading1 0.6s infinite;
+}
+
+.loading div:nth-child(2) {
+    left: 8px;
+    animation: loading2 0.6s infinite;
+}
+
+.loading div:nth-child(3) {
+    left: 32px;
+    animation: loading2 0.6s infinite;
+}
+
+.loading div:nth-child(4) {
+    left: 56px;
+    animation: loading3 0.6s infinite;
+}
+
+@keyframes loading1 {
+    0% {
+        transform: scale(0);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes loading2 {
+    0% {
+        transform: translate(0, 0);
+    }
+    100% {
+        transform: translate(24px, 0);
+    }
+}
+
+@keyframes loading3 {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(0);
+    }
+}
+
+/* Estilos para tabela de resultados */
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    color: var(--light-color);
+    font-size: 14px;
+}
+
+.results-table th,
+.results-table td {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid rgba(0, 119, 255, 0.3);
+}
+
+.results-table th {
+    background-color: rgba(0, 119, 255, 0.2);
+    font-weight: bold;
+}
+
+.results-table tr:nth-child(even) {
+    background-color: rgba(0, 119, 255, 0.05);
+}
+
+.results-table tr:hover {
+    background-color: rgba(0, 119, 255, 0.1);
+}
+
+/* Botão de download */
+.download-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: var(--neon-green);
+    color: var(--dark-color);
+    font-weight: bold;
+    border: none;
+    box-shadow: 0 0 10px var(--neon-green);
+}
+
+.download-button:hover {
+    background-color: var(--secondary-color);
+    box-shadow: 0 0 20px var(--neon-green);
+}
+
+/* Animação de pulsação para elementos importantes */
+.pulse-animation {
+    animation: pulse-element 2s infinite;
+}
+
+@keyframes pulse-element {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Estilo para o toggle de modelo de IA */
+.model-toggle {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+    margin-right: 10px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    transition: .4s;
+    border-radius: 34px;
+    border: 1px solid var(--neon-blue);
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 3px;
+    background-color: var(--neon-blue);
+    transition: .4s;
+    border-radius: 50%;
+    box-shadow: 0 0 5px var(--neon-blue);
+}
+
+input:checked + .slider {
+    background-color: rgba(0, 255, 157, 0.2);
+    border-color: var(--neon-green);
+}
+
+input:checked + .slider:before {
+    transform: translateX(30px);
+    background-color: var(--neon-green);
+    box-shadow: 0 0 10px var(--neon-green);
+}
+
+// Função para limpar os logs
+function clearLogs() {
+  const logs = document.getElementById('logs');
+  logs.innerText = '';
+  addLog('Logs limpos.');
+}
+
+// Adicionar event listeners quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', function() {
+  // Botões de loteria
+  const lotteryButtons = document.querySelectorAll('.lottery-button');
+  const lotteryInput = document.getElementById('lottery');
+  
+  lotteryButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      // Remover classe active de todos os botões
+      lotteryButtons.forEach(btn => btn.classList.remove('active'));
+      
+      // Adicionar classe active ao botão clicado
+      this.classList.add('active');
+      
+      // Atualizar o valor do input hidden
+      lotteryInput.value = this.dataset.lottery;
+      
+      addLog(`Loteria selecionada: ${this.dataset.lottery}`);
+    });
+  });
+  
+  // Botão de limpar logs
+  const clearButton = document.getElementById('clearButton');
+  if (clearButton) {
+    clearButton.addEventListener('click', clearLogs);
+  }
+  #checkGamesButton {
+    background-color: #28a745;
+    color: white;
+    cursor: pointer;
+    border: none;
+    padding: 10px;
+    margin: 5px;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  
+  #checkGamesButton:hover {
+    background-color: #218838;
+  }
+  
+});
+
+.container {
+    max-height: 80vh;
+    height: 80vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .logs {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-top: auto;
+    min-height: 150px;
+  }
+  
+  .button-group, .lottery-buttons, .model-toggle, .progress-container, .last-update {
+    flex-shrink: 0;
+  }
+  

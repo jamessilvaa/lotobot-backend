@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI LotoBot - Acesso</title>
+  <link rel="stylesheet" href="ai-lotobot.css">
+  <style>
+    .login-container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      margin: 20px auto;
+      text-align: center;
+    }
+    .token-input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .access-button {
+      background-color: #007bff;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .access-button:hover {
+      background-color: #0056b3;
+    }
+    .error-message {
+      color: #d9534f;
+      margin-top: 10px;
+      display: none;
+    }
+    .buy-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+    .buy-button {
+      background-color: #28a745;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    .buy-button:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <div class="circuit-bg"></div>
+  <div class="code-lines" id="code-lines"></div>
+  <div class="energy-circles" id="energy-circles"></div>
+  
+  <h1><span class="ia-badge">IA</span>AI LotoBot</h1>
+  
+  <div class="login-container">
+    <h2>Acesso ao Sistema</h2>
+    <p>Digite seu token de acesso para continuar:</p>
+    
+    <input type="text" id="accessToken" class="token-input" placeholder="Seu token de acesso">
+    <button id="validateButton" class="access-button">Acessar Sistema</button>
+    
+    <p id="errorMessage" class="error-message">Token inválido ou expirado. Por favor, verifique.</p>
+    
+    <div class="buy-section">
+      <p>Ainda não tem acesso?</p>
+      <a href="https://kiwifi.com.br/seu-produto" class="buy-button" target="_blank">Adquirir Acesso</a>
+    </div>
+  </div>
+
+  <script>
+    // Verificar se já existe um token válido
+    document.addEventListener('DOMContentLoaded', function() {
+      const storedToken = localStorage.getItem('lotobot_token');
+      const tokenExpiry = localStorage.getItem('lotobot_token_expiry');
+      
+      // Se tiver token e não estiver expirado, redirecionar para o app
+      if (storedToken && tokenExpiry && new Date(tokenExpiry) > new Date()) {
+        window.location.href = 'index.html';
+      }
+      
+      // Adicionar evento ao botão de validação
+      document.getElementById('validateButton').addEventListener('click', validateToken);
+      
+      // Permitir validação ao pressionar Enter
+      document.getElementById('accessToken').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          validateToken();
+        }
+      });
+      
+      // Verificar se veio de um redirecionamento com token na URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get('token');
+      if (urlToken) {
+        document.getElementById('accessToken').value = urlToken;
+        // Limpar URL para segurança
+        window.history.replaceState({}, document.title, 'login.html');
+        // Validar automaticamente
+        validateToken();
+      }
+    });
+    
+    async function validateToken() {
+      const token = document.getElementById('accessToken').value.trim();
+      const errorMsg = document.getElementById('errorMessage');
+      
+      if (!token) {
+        errorMsg.style.display = 'block';
+        errorMsg.textContent = 'Por favor, insira um token de acesso.';
+        return;
+      }
+      
+      try {
+        // Aqui você faria a validação com seu backend ou API da Kiwifi
+        // Para demonstração, vamos simular uma validação
+        const isValid = await checkTokenValidity(token);
+        
+        if (isValid.valid) {
+          // Token válido - salvar e redirecionar
+          localStorage.setItem('lotobot_token', token);
+          localStorage.setItem('lotobot_token_expiry', isValid.expiry);
+          localStorage.setItem('lotobot_user_plan', isValid.plan);
+          
+          // Redirecionar para o app principal
+          window.location.href = 'index.html';
+        } else {
+          // Token inválido
+          errorMsg.style.display = 'block';
+          errorMsg.textContent = isValid.message || 'Token inválido ou expirado.';
+        }
+      } catch (error) {
+        errorMsg.style.display = 'block';
+        errorMsg.textContent = 'Erro ao validar token. Tente novamente.';
+        console.error('Erro na validação:', error);
+      }
+    }
+    
+    // Função para verificar validade do token
+    // Em produção, isso deve fazer uma chamada ao seu backend
+    async function checkTokenValidity(token) {
+      // Simulação - em produção, substitua por uma chamada real à API
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          // Tokens de demonstração para teste
+          if (token === 'DEMO123') {
+            const expiry = new Date();
+            expiry.setDate(expiry.getDate() + 7); // 7 dias de acesso
+            resolve({
+              valid: true,
+              expiry: expiry.toISOString(),
+              plan: 'basic'
+            });
+          } else if (token === 'PREMIUM456') {
+            const expiry = new Date();
+            expiry.setDate(expiry.getDate() + 30); // 30 dias de acesso
+            resolve({
+              valid: true,
+              expiry: expiry.toISOString(),
+              plan: 'premium'
+            });
+          } else {
+            resolve({
+              valid: false,
+              message: 'Token não reconhecido. Verifique ou adquira um novo.'
+            });
+          }
+        }, 1000); // Simular delay de rede
+      });
+    }
+  </script>
+  
+  <script>
+    // Código das animações (mesmo do index.html)
+    document.addEventListener('DOMContentLoaded', function() {
+      const codeContainer = document.getElementById('code-lines');
+      const codeSnippets = [
+        "function validateAccess() {",
+        "const token = localStorage.getItem('token');",
+        "return verifyTokenSignature(token);",
+        "async function checkExpiry(tokenData) {",
+        "if (Date.now() > tokenData.expiry) {",
+        "return {valid: false, reason: 'expired'};"
+      ];
+      
+      // Limitar a 5 linhas de código para não sobrecarregar
+      for (let i = 0; i < 5; i++) {
+        const line = document.createElement('div');
+        line.classList.add('code-line');
+        line.textContent = codeSnippets[Math.floor(Math.random() * codeSnippets.length)];
+        line.style.left = `${Math.random() * 100}%`;
+        line.style.top = `${Math.random() * 100}%`;
+        line.style.animationDuration = `${Math.random() * 20 + 10}s`;
+        line.style.animationDelay = `${Math.random() * 5}s`;
+        codeContainer.appendChild(line);
+      }
+      
+      // Criar círculos de energia
+      const energyContainer = document.getElementById('energy-circles');
+      
+      function createEnergyCircle() {
+        const circle = document.createElement('div');
+        circle.classList.add('energy-circle');
+        const size = Math.random() * 100 + 50;
+        circle.style.width = `${size}px`;
+        circle.style.height = `${size}px`;
+        circle.style.left = `${Math.random() * 100}%`;
+        circle.style.top = `${Math.random() * 100}%`;
+        circle.style.borderColor = Math.random() > 0.5 ? 'var(--neon-blue)' : 'var(--neon-green)';
+        circle.style.animationDuration = `${Math.random() * 3 + 2}s`;
+        
+        energyContainer.appendChild(circle);
+        
+        setTimeout(() => {
+          if (circle && circle.parentNode) {
+            circle.parentNode.removeChild(circle);
+          }
+        }, 5000);
+      }
+      
+      const energyInterval = setInterval(createEnergyCircle, 3000);
+      
+      for (let i = 0; i < 2; i++) {
+        setTimeout(createEnergyCircle, i * 1000);
+      }
+      
+      window.addEventListener('beforeunload', function() {
+        clearInterval(energyInterval);
+      });
+    });
+  </script>
+</body>
+</html>
