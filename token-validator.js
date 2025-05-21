@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Habilitar CORS e JSON
+// Habilitar CORS e 
 app.use(cors());
 app.use(express.json());
 
