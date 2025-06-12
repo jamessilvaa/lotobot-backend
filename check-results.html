@@ -258,11 +258,11 @@
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Definir limites mínimos de acertos para cada loteria
-      const MIN_MATCHES = {
-        'Mega-Sena': 4,
-        'Lotofácil': 11,
-        'Lotomania': 16
+      // Definir faixas de acertos específicas para cada loteria
+      const LOTTERY_RANGES = {
+        'Mega-Sena': [4, 5, 6],
+        'Lotofácil': [11, 12, 13, 14, 15],
+        'Lotomania': [16, 17, 18, 19, 20]
       };
       
       // Tentar carregar os dados do localStorage
@@ -279,10 +279,10 @@
       document.getElementById('lottery-name').textContent = lottery;
       
       // Processar os jogos e verificar acertos
-      processGames(games, historicalResults, lottery, config, MIN_MATCHES[lottery]);
+      processGames(games, historicalResults, lottery, config, LOTTERY_RANGES[lottery]);
     });
     
-    function processGames(games, historicalResults, lottery, config, minMatches) {
+    function processGames(games, historicalResults, lottery, config, allowedMatches) {
       // Converter resultados históricos para um formato mais fácil de trabalhar
       const historicalSets = historicalResults.map(result => {
         const numbers = [];
@@ -292,18 +292,17 @@
         }
         return {
           concurso: result.Concurso,
-          data: result.Data,
           numbers: numbers
         };
       });
       
-      // Estatísticas de acertos
+      // Estatísticas de acertos apenas para as faixas permitidas
       const matchStats = {};
-      for (let i = minMatches; i <= config.numbers; i++) {
-        matchStats[i] = 0;
-      }
+      allowedMatches.forEach(match => {
+        matchStats[match] = 0;
+      });
       
-      // Resultados com pontuação mínima ou superior
+      // Resultados com pontuação nas faixas permitidas
       const significantResults = [];
       
       // Verificar cada jogo contra todos os resultados históricos
@@ -315,12 +314,11 @@
           const matchingNumbers = game.filter(num => historicalSet.numbers.includes(num));
           const matchCount = matchingNumbers.length;
           
-          // Se atingiu o mínimo de acertos, registrar
-          if (matchCount >= minMatches) {
+          // Se está na faixa de acertos permitida, registrar
+          if (allowedMatches.includes(matchCount)) {
             gameMatches.push({
               gameIndex: gameIndex,
               concurso: historicalSet.concurso,
-              data: historicalSet.data,
               matchCount: matchCount,
               matchingNumbers: matchingNumbers,
               distance: historicalResults.length - histIndex - 1 // Quantos concursos atrás
@@ -345,8 +343,7 @@
       });
       
       // Ordenar resultados por número do jogo (crescente)
-significantResults.sort((a, b) => a.gameNumber - b.gameNumber);
-
+      significantResults.sort((a, b) => a.gameNumber - b.gameNumber);
       
       // Calcular estatísticas gerais
       const totalSignificantMatches = Object.values(matchStats).reduce((a, b) => a + b, 0);
@@ -371,28 +368,28 @@ significantResults.sort((a, b) => a.gameNumber - b.gameNumber);
       }
       
       // Exibir resultados na página
-      displayResults(significantResults, matchStats, totalSignificantMatches, closestMatch, lottery, minMatches, config.numbers);
+      displayResults(significantResults, matchStats, totalSignificantMatches, closestMatch, lottery, allowedMatches);
     }
     
-    function displayResults(significantResults, matchStats, totalMatches, closestMatch, lottery, minMatches, maxNumbers) {
+    function displayResults(significantResults, matchStats, totalMatches, closestMatch, lottery, allowedMatches) {
       // Ocultar loading e mostrar conteúdo
       document.getElementById('loading').style.display = 'none';
       document.getElementById('content').style.display = 'block';
       
-      // Exibir estatísticas de resumo
+      // Exibir estatísticas de resumo apenas para as faixas permitidas
       const summaryStatsContainer = document.getElementById('summary-stats');
       summaryStatsContainer.innerHTML = '';
       
-      // Adicionar estatísticas para cada nível de acertos
-      for (let i = minMatches; i <= maxNumbers; i++) {
+      // Adicionar estatísticas para cada nível de acertos permitido
+      allowedMatches.forEach(matchCount => {
         const statBox = document.createElement('div');
         statBox.className = 'stat-box';
         statBox.innerHTML = `
-          <h3>${i} Acertos:</h3>
-          <p>${matchStats[i] || 0}</p>
+          <h3>${matchCount} Acertos:</h3>
+          <p>${matchStats[matchCount] || 0}</p>
         `;
         summaryStatsContainer.appendChild(statBox);
-      }
+      });
       
       // Adicionar estatística de total
       const totalBox = document.createElement('div');
@@ -403,119 +400,121 @@ significantResults.sort((a, b) => a.gameNumber - b.gameNumber);
       `;
       summaryStatsContainer.appendChild(totalBox);
       
-            // Adicionar informação sobre o jogo mais recente com acertos
-            if (closestMatch) {
-                const recentBox = document.createElement('div');
-                recentBox.className = 'stat-box';
-                recentBox.style.flexBasis = '100%';
-                recentBox.innerHTML = `
-                  <h3>Acerto mais recente:</h3>
-                  <p>Há ${closestMatch.distance} concursos atrás</p>
-                `;
-                summaryStatsContainer.appendChild(recentBox);
-              }
-              
-              // Exibir resultados detalhados
-              const resultsContainer = document.getElementById('results-container');
-              resultsContainer.innerHTML = '';
-              
-              if (significantResults.length === 0) {
-                resultsContainer.innerHTML = `
-                  <div class="result-card">
-                    <h3>Nenhum resultado significativo encontrado</h3>
-                    <p>Nenhum dos jogos gerados atingiu o mínimo de ${minMatches} acertos em concursos anteriores.</p>
-                  </div>
-                `;
-                return;
-              }
-              
-              // Adicionar título para a seção de resultados
-              const resultsTitle = document.createElement('h3');
-              resultsTitle.style.margin = '0 0 15px 0';
-              resultsTitle.style.color = 'var(--neon-green)';
-              resultsTitle.textContent = 'RESULTADOS COM PONTUAÇÃO:';
-              resultsContainer.appendChild(resultsTitle);
-              
-              // Adicionar cada resultado significativo
-              significantResults.forEach(result => {
-                // Pegar o melhor resultado (maior número de acertos)
-                const bestMatch = result.matches.reduce((best, current) => 
-                  current.matchCount > best.matchCount ? current : best, result.matches[0]);
-                
-                const resultCard = document.createElement('div');
-                resultCard.className = 'result-card';
-                
-                // Definir cor da borda baseada no número de acertos
-                const maxPossibleMatches = maxNumbers;
-                const matchRatio = bestMatch.matchCount / maxPossibleMatches;
-                
-                if (matchRatio >= 0.8) {
-                  resultCard.style.borderLeftColor = 'var(--success-color)';
-                } else if (matchRatio >= 0.6) {
-                  resultCard.style.borderLeftColor = 'var(--warning-color)';
-                } else if (matchRatio >= 0.4) {
-                  resultCard.style.borderLeftColor = 'var(--info-color)';
-                }
-                
-                // Criar o conteúdo do card
-                resultCard.innerHTML = `
-                  <h3>JOGO - ${result.gameNumber.toString().padStart(2, '0')} - Concurso:${bestMatch.concurso} Total Acertos: ${bestMatch.matchCount}</h3>
-                  <div class="numbers">
-                    ${result.game.map(num => {
-                      const isMatched = bestMatch.matchingNumbers.includes(num);
-                      return `<div class="number ${isMatched ? 'matched' : ''}">${num}</div>`;
-                    }).join('')}
-                  </div>
-                  <p style="margin-top: 10px; font-size: 0.8rem; color: var(--secondary-color);">
-                    Este jogo também pontuou em ${result.matches.length} concursos diferentes.
-                  </p>
-                `;
-                
-                // Adicionar detalhes expandíveis para todos os concursos onde este jogo pontuou
-                if (result.matches.length > 1) {
-                  const detailsContainer = document.createElement('details');
-                  detailsContainer.style.marginTop = '10px';
-                  
-                  const summary = document.createElement('summary');
-                  summary.textContent = 'Ver todos os concursos';
-                  summary.style.cursor = 'pointer';
-                  summary.style.color = 'var(--neon-blue)';
-                  detailsContainer.appendChild(summary);
-                  
-                  const matchesList = document.createElement('ul');
-                  matchesList.style.marginTop = '5px';
-                  matchesList.style.paddingLeft = '20px';
-                  
-                  result.matches.forEach(match => {
-                    const listItem = document.createElement('li');
-                    listItem.innerHTML = `Concurso ${match.concurso} (${match.data}): ${match.matchCount} acertos`;
-                    matchesList.appendChild(listItem);
-                  });
-                  
-                  detailsContainer.appendChild(matchesList);
-                  resultCard.appendChild(detailsContainer);
-                }
-                
-                resultsContainer.appendChild(resultCard);
-              });
-            }
-            
-            function showError(message) {
-              document.getElementById('loading').style.display = 'none';
-              document.getElementById('content').style.display = 'block';
-              
-              const resultsContainer = document.getElementById('results-container');
-              resultsContainer.innerHTML = `
-                <div class="result-card" style="border-left-color: var(--danger-color);">
-                  <h3>Erro</h3>
-                  <p>${message}</p>
-                </div>
-              `;
-              
-              // Limpar estatísticas
-              document.getElementById('summary-stats').innerHTML = '';
-            }
-          </script>
-        </body>
-        </html>
+      // Adicionar informação sobre o jogo mais recente com acertos
+      if (closestMatch) {
+        const recentBox = document.createElement('div');
+        recentBox.className = 'stat-box';
+        recentBox.style.flexBasis = '100%';
+        recentBox.innerHTML = `
+          <h3>Acerto mais recente:</h3>
+          <p>Há ${closestMatch.distance} concursos atrás</p>
+        `;
+        summaryStatsContainer.appendChild(recentBox);
+      }
+      
+      // Exibir resultados detalhados
+      const resultsContainer = document.getElementById('results-container');
+      resultsContainer.innerHTML = '';
+      
+      if (significantResults.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="result-card">
+            <h3>Nenhum resultado significativo encontrado</h3>
+            <p>Nenhum dos jogos gerados atingiu as faixas de premiação (
+              ${allowedMatches.join(', ')} acertos) em concursos anteriores.</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Adicionar título para a seção de resultados
+      const resultsTitle = document.createElement('h3');
+      resultsTitle.style.margin = '0 0 15px 0';
+      resultsTitle.style.color = 'var(--neon-green)';
+      resultsTitle.textContent = 'RESULTADOS COM PONTUAÇÃO:';
+      resultsContainer.appendChild(resultsTitle);
+      
+      // Adicionar cada resultado significativo
+      significantResults.forEach(result => {
+        // Pegar o melhor resultado (maior número de acertos)
+        const bestMatch = result.matches.reduce((best, current) =>
+          current.matchCount > best.matchCount ? current : best, result.matches[0]);
         
+        const resultCard = document.createElement('div');
+        resultCard.className = 'result-card';
+        
+        // Definir cor da borda baseada no número de acertos
+        const maxAllowedMatches = Math.max(...allowedMatches);
+        const matchRatio = bestMatch.matchCount / maxAllowedMatches;
+        
+        if (matchRatio >= 0.9) {
+          resultCard.style.borderLeftColor = 'var(--success-color)';
+        } else if (matchRatio >= 0.7) {
+          resultCard.style.borderLeftColor = 'var(--warning-color)';
+        } else {
+          resultCard.style.borderLeftColor = 'var(--info-color)';
+        }
+        
+        // Criar o conteúdo do card (formato: Concurso XXXX : XX acertos)
+        resultCard.innerHTML = `
+          <h3>JOGO ${result.gameNumber.toString().padStart(2, '0')} - Concurso ${bestMatch.concurso} : ${bestMatch.matchCount} acertos</h3>
+          <div class="numbers">
+            ${result.game.map(num => {
+              const isMatched = bestMatch.matchingNumbers.includes(num);
+              const formattedNum = num.toString().padStart(2, '0');
+              return `<div class="number ${isMatched ? 'matched' : ''}">${formattedNum}</div>`;
+            }).join('')}
+          </div>
+          <p style="margin-top: 10px; font-size: 0.8rem; color: var(--secondary-color);">
+            Este jogo também pontuou em ${result.matches.length} concursos diferentes.
+          </p>
+        `;
+        
+        // Adicionar detalhes expandíveis para todos os concursos onde este jogo pontuou
+        if (result.matches.length > 1) {
+          const detailsContainer = document.createElement('details');
+          detailsContainer.style.marginTop = '10px';
+          
+          const summary = document.createElement('summary');
+          summary.textContent = 'Ver todos os concursos';
+          summary.style.cursor = 'pointer';
+          summary.style.color = 'var(--neon-blue)';
+          detailsContainer.appendChild(summary);
+          
+          const matchesList = document.createElement('ul');
+          matchesList.style.marginTop = '5px';
+          matchesList.style.paddingLeft = '20px';
+          
+          result.matches.forEach(match => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `Concurso ${match.concurso} : ${match.matchCount} acertos`;
+            matchesList.appendChild(listItem);
+          });
+          
+          detailsContainer.appendChild(matchesList);
+          resultCard.appendChild(detailsContainer);
+        }
+        
+        resultsContainer.appendChild(resultCard);
+      });
+    }
+    
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+      
+      const resultsContainer = document.getElementById('results-container');
+      resultsContainer.innerHTML = `
+        <div class="result-card" style="border-left-color: var(--danger-color);">
+          <h3>Erro</h3>
+          <p>${message}</p>
+        </div>
+      `;
+      
+      // Limpar estatísticas
+      document.getElementById('summary-stats').innerHTML = '';
+    }
+  </script>
+</body>
+</html>
+

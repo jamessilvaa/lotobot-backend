@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Administração - AI LotoBot</title>
+  <link rel="icon" type="image/x-icon" href="image/favicon32.png">
+  <script src="admin-auth.js"></script>
+  <style>
+    :root {
+      --neon-blue: #00a8ff;
+      --neon-green: #39ff14;
+      --dark-bg: #0a1929;
+      --panel-bg: rgba(10, 10, 26, 0.9);
+      --text-color: #f0f0f0;
+      --border-radius: 8px;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--dark-bg);
+      margin: 0;
+      padding: 0;
+      color: var(--text-color);
+    }
+    
+    .admin-container {
+      background-color: var(--panel-bg);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      max-width: 700px;
+      margin: 20px auto;
+      box-shadow: 0 0 15px rgba(0, 168, 255, 0.3);
+    }
+    
+    h2 {
+      text-align: center;
+      margin-bottom: 15px;
+      color: var(--neon-green);
+      font-size: 1.5rem;
+    }
+    
+    .tabs {
+      display: flex;
+      margin-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .tab {
+      padding: 8px 15px;
+      cursor: pointer;
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+      margin-right: 5px;
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+    
+    .tab.active {
+      background-color: rgba(0, 168, 255, 0.2);
+      border-bottom: 2px solid var(--neon-blue);
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+    
+    input, select, button {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border: 1px solid #333;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #000;
+      font-size: 0.9rem;
+    }
+    
+    table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    
+    th, td {
+      padding: 8px;
+      border-bottom: 1px solid #444;
+      text-align: left;
+    }
+    
+    .btn-danger {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    
+    .btn-success {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .message {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    
+    .success { 
+      background-color: rgba(40, 167, 69, 0.2); 
+      color: #4ade80; 
+    }
+    
+    .error { 
+      background-color: rgba(220, 53, 69, 0.2); 
+      color: #f87171; 
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      margin-left: 8px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .copy-btn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 3px 6px;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-left: 5px;
+      font-size: 0.75rem;
+    }
+    
+    /* Animações de fundo - reduzidas e opcionais */
+    .circuit-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      background-color: var(--dark-bg);
+      opacity: 0.8;
+    }
+    
+    .code-line {
+      position: fixed;
+      color: rgba(0, 200, 255, 0.15);
+      font-family: monospace;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: -1;
+      animation: float linear infinite;
+    }
+    
+    @keyframes float {
+      from { transform: translateY(0); }
+      to { transform: translateY(-100vh); }
+    }
+    
+    /* Botões de navegação */
+    .nav-buttons {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    
+    .home-btn {
+      padding: 8px 15px;
+      background-color: var(--neon-blue);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      width: auto;
+    }
+    
+    .logout-btn {
+      padding: 8px 15px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      width: auto;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .admin-container {
+        margin: 10px;
+        padding: 15px;
+      }
+      
+      .tabs {
+        flex-wrap: wrap;
+      }
+      
+      .tab {
+        margin-bottom: 5px;
+      }
+      
+      table {
+        font-size: 0.75rem;
+      }
+      
+      th, td {
+        padding: 6px 4px;
+      }
+      
+      .token-cell {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .nav-buttons {
+        top: 10px;
+        right: 10px;
+      }
+      
+      .home-btn, .logout-btn {
+        padding: 5px 10px;
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="circuit-bg" id="circuit-bg"></div>
+  <div class="code-lines" id="code-lines"></div>
+  
+  <div class="nav-buttons">
+    <button id="homeBtn" class="home-btn">Página Principal</button>
+    <button id="logoutBtn" class="logout-btn">Sair</button>
+  </div>
+  
+  <div class="admin-container">
+    <h2>Painel de Administração - LotoBot</h2>
+    
+    <div>
+      <label for="apiKey">Chave de Acesso Admin:</label>
+      <input type="password" id="apiKey" placeholder="Digite sua chave admin...">
+      <div id="auth-message" class="message" style="display:none;"></div>
+    </div>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="create">Criar Token</div>
+      <div class="tab" data-tab="list">Listar Tokens</div>
+      <div class="tab" data-tab="settings">Configurações</div>
+    </div>
+    
+    <div class="tab-content active" id="create-tab">
+      <select id="tokenPlan" style="margin-bottom: 10px;">
+        <option value="standard">Plano Padrão</option>
+        <option value="premium">Plano Premium</option>
+        <option value="basic">Plano Básico</option>
+      </select>
+      <button class="btn-success" id="createTokenBtn" onclick="createToken()">Gerar Token Vitalício</button>
+      <div id="createMessage" class="message" style="display:none;"></div>
+    </div>
+    
+    <div class="tab-content" id="list-tab">
+      <button class="btn-success" id="loadTokensBtn" onclick="loadTokens()">Atualizar Lista</button>
+      <table id="tokensTable">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Plano</th>
+            <th>Expiração</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tokensBody">
+          <tr>
+            <td colspan="4" style="text-align: center;">Clique em "Atualizar Lista" para carregar os tokens</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="tab-content" id="settings-tab">
+      <h3>Configurações do Painel</h3>
+      <div>
+        <label>
+          <input type="checkbox" id="animations-toggle" checked>
+          Mostrar animações de fundo
+        </label>
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" id="dark-mode-toggle" checked>
+          Modo escuro
+        </label>
+      </div>
+      <div style="margin-top: 15px;">
+        <button class="btn-success" onclick="saveSettings()">Salvar Configurações</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let settings = {
+      showAnimations: true,
+      darkMode: true
+    };
+    
+    // Funções para gerenciar tokens no localStorage
+    function getStoredTokens() {
+      const tokens = localStorage.getItem('admin_tokens');
+      return tokens ? JSON.parse(tokens) : {};
+    }
+    
+    function saveStoredTokens(tokens) {
+      localStorage.setItem('admin_tokens', JSON.stringify(tokens));
+    }
+    
+    // Verificar autenticação de administrador
+    document.addEventListener('DOMContentLoaded', function() {
+      // Verificar se o usuário está autenticado
+      const storedToken = localStorage.getItem('lotobot_token');
+      const isAdmin = localStorage.getItem('isAdmin');
+      const tokenExpiry = localStorage.getItem('lotobot_token_expiry');
+      
+      // Verificar se é administrador e se o token é válido
+      if (!storedToken || isAdmin !== 'true' || !tokenExpiry || new Date(tokenExpiry) <= new Date()) {
+        // Não é admin ou token expirado, redirecionar para index
+        window.location.href = 'index.html?redirect=admin';
+        return;
+      }
+      
+      // É admin, preencher o campo de API Key automaticamente
+      document.getElementById('apiKey').value = AdminAuth.getAdminToken();
+      showMessage('auth-message', 'Autenticado como administrador', true);
+      
+      // Configurar botão de voltar para página principal
+      document.getElementById('homeBtn').addEventListener('click', function() {
+        window.location.href = 'app.html';
+      });
+      
+      // Configurar botão de logout
+      document.getElementById('logoutBtn').addEventListener('click', function() {
+        if (confirm('Deseja realmente sair?')) {
+          localStorage.removeItem('lotobot_token');
+          localStorage.removeItem('lotobot_token_expiry');
+          localStorage.removeItem('lotobot_user_plan');
+          localStorage.removeItem('isAdmin');
+          window.location.href = 'index.html';
+        }
+      });
+      
+      // Carregar configurações salvas
+      const savedSettings = localStorage.getItem('admin_settings');
+      if (savedSettings) {
+        settings = JSON.parse(savedSettings);
+        document.getElementById('animations-toggle').checked = settings.showAnimations;
+        document.getElementById('dark-mode-toggle').checked = settings.darkMode;
+        applySettings();
+      }
+      
+      // Configurar abas
+      setupTabs();
+      
+      // Adicionar animações de fundo (reduzidas)
+      if (settings.showAnimations) {
+        setupAnimations();
+      }
+      
+      // Carregar tokens automaticamente
+      loadTokens();
+    });
+
+    function setupTabs() {
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          // Remover classe active de todas as abas
+          tabs.forEach(t => t.classList.remove('active'));
+          // Adicionar classe active na aba clicada
+          tab.classList.add('active');
+          // Esconder todos os conteúdos
+          document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+          });
+          // Mostrar o conteúdo correspondente
+          const tabId = tab.getAttribute('data-tab');
+          document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+      });
+    }
+    
+    function saveSettings() {
+      settings.showAnimations = document.getElementById('animations-toggle').checked;
+      settings.darkMode = document.getElementById('dark-mode-toggle').checked;
+      localStorage.setItem('admin_settings', JSON.stringify(settings));
+      applySettings();
+      showMessage('createMessage', 'Configurações salvas com sucesso', true);
+    }
+    
+    function applySettings() {
+      // Aplicar animações
+      const codeLines = document.getElementById('code-lines');
+      if (settings.showAnimations) {
+        codeLines.style.display = 'block';
+        if (codeLines.children.length === 0) {
+          setupAnimations();
+        }
+      } else {
+        codeLines.style.display = 'none';
+      }
+      
+      // Aplicar modo escuro/claro
+      document.documentElement.style.setProperty('--dark-bg', settings.darkMode ? '#0a1929' : '#f0f4f8');
+      document.documentElement.style.setProperty('--panel-bg', settings.darkMode ? 'rgba(10, 10, 26, 0.9)' : 'rgba(255, 255, 255, 0.9)');
+      document.documentElement.style.setProperty('--text-color', settings.darkMode ? '#f0f0f0' : '#333');
+    }
+    
+    function showMessage(id, text, success = true) {
+      const box = document.getElementById(id);
+      box.innerHTML = text; // Usando innerHTML para permitir HTML (para o botão de copiar)
+      box.className = `message ${success ? 'success' : 'error'}`;
+      box.style.display = 'block';
+    }
+    
+    function setLoading(buttonId, isLoading) {
+      const button = document.getElementById(buttonId);
+      if (isLoading) {
+        button.disabled = true;
+        button.innerHTML = button.textContent + ' <span class="loading"></span>';
+      } else {
+        button.disabled = false;
+        button.innerHTML = button.textContent.replace(' <span class="loading"></span>', '');
+      }
+    }
+    
+    function validateAdminKey() {
+      const apiKey = document.getElementById('apiKey').value.trim();
+      if (!AdminAuth.validateAdminToken(apiKey)) {
+        showMessage('auth-message', 'Chave de administrador inválida.', false);
+        return false;
+      }
+      showMessage('auth-message', 'Chave de administrador válida.', true);
+      return true;
+    }
+    
+    async function createToken() {
+      if (!validateAdminKey()) return;
+      setLoading('createTokenBtn', true);
+      
+      setTimeout(() => {
+        // Gerar token único
+        const token = 'TOKEN_' + Math.random().toString(36).substring(2, 15).toUpperCase() + Date.now().toString(36).toUpperCase();
+        const expiryDate = new Date();
+        expiryDate.setFullYear(expiryDate.getFullYear() + 10); // 10 anos
+        const plan = document.getElementById('tokenPlan').value || 'standard';
+        
+        // Salvar no localStorage
+        const tokens = getStoredTokens();
+        tokens[token] = {
+          plan: plan,
+          expiry: expiryDate.toISOString(),
+          created: new Date().toISOString()
+        };
+        saveStoredTokens(tokens);
+        
+        const tokenMessage = `Token criado: <strong>${token}</strong> <button class="copy-btn" onclick="copyToClipboard('${token}')">Copiar</button>`;
+        showMessage('createMessage', tokenMessage, true);
+        
+        // Atualizar a lista automaticamente
+        loadTokens();
+        setLoading('createTokenBtn', false);
+      }, 800);
+    }
+    
+    async function loadTokens() {
+      if (!validateAdminKey()) return;
+      setLoading('loadTokensBtn', true);
+      
+      setTimeout(() => {
+        const tokens = getStoredTokens();
+        displayTokens(tokens);
+        setLoading('loadTokensBtn', false);
+      }, 500);
+    }
+    
+    function displayTokens(tokens) {
+      const tbody = document.getElementById('tokensBody');
+      tbody.innerHTML = '';
+      
+      if (Object.keys(tokens).length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum token encontrado</td></tr>';
+        return;
+      }
+      
+      for (const [token, info] of Object.entries(tokens)) {
+        const tr = document.createElement('tr');
+        const expiryDate = new Date(info.expiry);
+        const isExpired = expiryDate <= new Date();
+        
+        tr.innerHTML = `
+          <td class="token-cell">${token} <button class="copy-btn" onclick="copyToClipboard('${token}')">Copiar</button></td>
+          <td>${info.plan || 'standard'}</td>
+          <td>${isExpired ? '<span style="color: #dc3545">Expirado</span>' : expiryDate.toLocaleDateString()}</td>
+          <td><button class="btn-danger" onclick="revokeToken('${token}')" ${isExpired ? 'disabled' : ''}>Revogar</button></td>
+        `;
+        
+        if (isExpired) {
+          tr.style.opacity = '0.6';
+        }
+        
+        tbody.appendChild(tr);
+      }
+    }
+    
+    async function revokeToken(token) {
+      if (!validateAdminKey()) return;
+      if (!confirm('Tem certeza que deseja revogar este token?')) return;
+      
+      setTimeout(() => {
+        const tokens = getStoredTokens();
+        if (tokens[token]) {
+          delete tokens[token];
+          saveStoredTokens(tokens);
+          showMessage('createMessage', 'Token revogado com sucesso.', true);
+          loadTokens();
+        } else {
+          showMessage('createMessage', 'Token não encontrado.', false);
+        }
+      }, 500);
+    }
+    
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Token copiado para a área de transferência!');
+      }).catch(err => {
+        console.error('Erro ao copiar: ', err);
+        // Fallback para navegadores que não suportam clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          const successful = document.execCommand('copy');
+          if (successful) {
+            alert('Token copiado para a área de transferência!');
+          } else {
+            alert('Não foi possível copiar automaticamente. Token: ' + text);
+          }
+        } catch (err) {
+          console.error('Erro ao copiar com fallback: ', err);
+          alert('Não foi possível copiar automaticamente. Token: ' + text);
+        }
+        
+        document.body.removeChild(textArea);
+      });
+    }
+    
+    function setupAnimations() {
+      // Limpar animações existentes
+      const codeContainer = document.getElementById('code-lines');
+      codeContainer.innerHTML = '';
+      
+      // Código reduzido - apenas 3 linhas para não sobrecarregar
+      const codeSnippets = [
+        "function validateAdmin() {",
+        "const token = crypto.randomBytes(16).toString('hex');",
+        "return {token, expiry: new Date(2099, 11, 31)};"
+      ];
+      
+      // Adicionar apenas 3 linhas de código
+      for (let i = 0; i < 3; i++) {
+        const line = document.createElement('div');
+        line.classList.add('code-line');
+        line.textContent = codeSnippets[i % codeSnippets.length];
+        line.style.left = `${Math.random() * 100}%`;
+        line.style.top = `${Math.random() * 100}%`;
+        line.style.animationDuration = `${Math.random() * 20 + 15}s`;
+        line.style.animationDelay = `${Math.random() * 5}s`;
+        codeContainer.appendChild(line);
+      }
+    }
+  </script>
+</body>
+</html>
+

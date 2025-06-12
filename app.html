@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI LotoBot</title>
+  <link rel="stylesheet" href="ai-lotobot.css">
+  <link rel="icon" type="image/x-icon" href="image/favicon32.png">
+  
+  <style>
+    /* Estilos adicionais apenas para os elementos de autenticação */
+    .auth-controls {
+      position: fixed;
+      top: 20px;
+      width: 100%;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 20px;
+      box-sizing: border-box;
+    }
+    .auth-button {
+      background-color: rgba(0, 0, 0, 0.7);
+      color: var(--neon-blue);
+      border: 1px solid var(--neon-blue);
+      border-radius: 5px;
+      padding: 8px 15px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .auth-button:hover {
+      background-color: var(--neon-blue);
+      color: black;
+    }
+    .admin-button {
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+    }
+    .admin-button:hover {
+      background-color: var(--neon-green);
+    }
+    .logout-button {
+      border-color: #ff5555;
+      color: #ff5555;
+    }
+    .logout-button:hover {
+      background-color: #ff5555;
+    }
+
+    /* CSS do Robô LSTM Lotobot */
+    .robot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      pointer-events: auto;
+    }
+
+    .robot {
+      width: 120px;
+      height: 140px;
+      position: relative;
+      animation: robotFloat 3s ease-in-out infinite;
+      cursor: pointer;
+    }
+
+    /* Cabeça do robô */
+    .robot-head {
+      width: 60px;
+      height: 50px;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 2px solid var(--neon-blue);
+      border-radius: 15px;
+      position: relative;
+      margin: 0 auto;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    /* Olhos do robô */
+    .robot-eye {
+      width: 12px;
+      height: 12px;
+      background: var(--neon-green);
+      border-radius: 50%;
+      position: absolute;
+      top: 15px;
+      box-shadow: 0 0 10px var(--neon-green);
+      animation: robotBlink 4s infinite;
+    }
+
+    .robot-eye.left {
+      left: 12px;
+    }
+
+    .robot-eye.right {
+      right: 12px;
+    }
+
+    /* Antena */
+    .robot-antenna {
+      width: 2px;
+      height: 15px;
+      background: var(--neon-blue);
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 0 5px var(--neon-blue);
+    }
+
+    .robot-antenna::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--neon-green);
+      border-radius: 50%;
+      position: absolute;
+      top: -3px;
+      left: -2px;
+      box-shadow: 0 0 8px var(--neon-green);
+      animation: antennaGlow 2s ease-in-out infinite alternate;
+    }
+
+    /* Corpo do robô */
+    .robot-body {
+      width: 80px;
+      height: 60px;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 2px solid var(--neon-blue);
+      border-radius: 10px;
+      margin: 5px auto;
+      position: relative;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    }
+
+    /* Painel do corpo */
+    .robot-panel {
+      width: 50px;
+      height: 30px;
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid var(--neon-blue);
+      border-radius: 5px;
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* LEDs do painel */
+    .robot-led {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      position: absolute;
+      top: 8px;
+    }
+
+    .robot-led:nth-child(1) {
+      left: 8px;
+      background: var(--neon-green);
+      box-shadow: 0 0 5px var(--neon-green);
+      animation: ledBlink 1s infinite;
+    }
+
+    .robot-led:nth-child(2) {
+      left: 18px;
+      background: #ff6b6b;
+      box-shadow: 0 0 5px #ff6b6b;
+      animation: ledBlink 1s infinite 0.3s;
+    }
+
+    .robot-led:nth-child(3) {
+      left: 28px;
+      background: #ffd93d;
+      box-shadow: 0 0 5px #ffd93d;
+      animation: ledBlink 1s infinite 0.6s;
+    }
+
+    .robot-led:nth-child(4) {
+      left: 38px;
+      background: var(--neon-blue);
+      box-shadow: 0 0 5px var(--neon-blue);
+      animation: ledBlink 1s infinite 0.9s;
+    }
+
+    /* Braços do robô */
+    .robot-arm {
+      width: 15px;
+      height: 40px;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid var(--neon-blue);
+      border-radius: 8px;
+      position: absolute;
+      top: 60px;
+      box-shadow: 0 0 8px rgba(0, 255, 255, 0.2);
+    }
+
+    .robot-arm.left {
+      left: -18px;
+      animation: armMove 2s ease-in-out infinite;
+    }
+
+    .robot-arm.right {
+      right: -18px;
+      animation: armMove 2s ease-in-out infinite reverse;
+    }
+
+    /* Pernas do robô */
+    .robot-leg {
+      width: 12px;
+      height: 25px;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid var(--neon-blue);
+      border-radius: 6px;
+      position: absolute;
+      top: 115px;
+      box-shadow: 0 0 8px rgba(0, 255, 255, 0.2);
+    }
+
+    .robot-leg.left {
+      left: 35px;
+      animation: legMove 1.5s ease-in-out infinite;
+    }
+
+    .robot-leg.right {
+      right: 35px;
+      animation: legMove 1.5s ease-in-out infinite 0.75s;
+    }
+
+    /* Nome do robô */
+    .robot-name {
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: var(--neon-green);
+      padding: 5px 10px;
+      border-radius: 15px;
+      border: 1px solid var(--neon-green);
+      font-size: 12px;
+      font-weight: bold;
+      text-shadow: 0 0 5px var(--neon-green);
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+      white-space: nowrap;
+      animation: nameGlow 3s ease-in-out infinite alternate;
+    }
+
+    /* Balão de fala */
+    .robot-speech {
+      position: absolute;
+      top: -80px;
+      left: -50px;
+      background: rgba(0, 0, 0, 0.9);
+      color: var(--neon-blue);
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--neon-blue);
+      font-size: 11px;
+      max-width: 150px;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+      opacity: 0;
+      animation: speechBubble 8s infinite;
+    }
+
+    .robot-speech::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid var(--neon-blue);
+    }
+
+    /* Animações */
+    @keyframes robotFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes robotBlink {
+      0%, 90%, 100% { opacity: 1; }
+      95% { opacity: 0.3; }
+    }
+
+    @keyframes antennaGlow {
+      0% { box-shadow: 0 0 8px var(--neon-green); }
+      100% { box-shadow: 0 0 15px var(--neon-green), 0 0 25px var(--neon-green); }
+    }
+
+    @keyframes ledBlink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+
+    @keyframes armMove {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(15deg); }
+    }
+
+    @keyframes legMove {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+
+    @keyframes nameGlow {
+      0% { 
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        text-shadow: 0 0 5px var(--neon-green);
+      }
+      100% { 
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+        text-shadow: 0 0 10px var(--neon-green);
+      }
+    }
+
+    @keyframes speechBubble {
+      0%, 15% { opacity: 0; transform: translateY(10px); }
+      20%, 80% { opacity: 1; transform: translateY(0px); }
+      85%, 100% { opacity: 0; transform: translateY(-10px); }
+    }
+
+    /* Movimento do robô pela tela */
+    @keyframes robotWalk {
+      0% { 
+        right: -150px; 
+        transform: scaleX(1);
+      }
+      25% { 
+        right: 50%;
+        transform: scaleX(1);
+      }
+      50% { 
+        right: 50%;
+        transform: scaleX(-1);
+      }
+      75% { 
+        right: calc(100% - 150px);
+        transform: scaleX(-1);
+      }
+      100% { 
+        right: -150px;
+        transform: scaleX(1);
+      }
+    }
+
+    .robot-walking {
+      animation: robotWalk 20s linear infinite, robotFloat 3s ease-in-out infinite;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      /* Ajustes para os botões de autenticação em dispositivos móveis */
+      .auth-controls {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 2000; /* Aumentado para garantir que fique acima de outros elementos */
+        display: flex;
+        gap: 8px; /* Espaçamento adequado entre botões */
+      }
+      
+      .auth-button {
+        padding: 8px 12px; /* Botões um pouco maiores para facilitar o toque */
+        font-size: 13px; /* Texto mais legível */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Sombra para destacar os botões */
+        min-width: 60px; /* Largura mínima para garantir área de toque adequada */
+        text-align: center; /* Centralizar texto */
+      }
+      
+      /* Ajustes para o robô */
+      .robot-container {
+        bottom: 10px;
+        right: 10px;
+      }
+      
+      .robot {
+        width: 80px;
+        height: 100px;
+        transform: scale(0.8);
+      }
+      
+      .robot-speech {
+        font-size: 9px;
+        max-width: 120px;
+        left: -40px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Controles de autenticação -->
+  <div class="auth-controls">
+    <div>
+      <button id="adminBtn" class="auth-button admin-button" style="display: none;">Painel Admin</button>
+    </div>
+    <div>
+      <button id="logoutBtn" class="auth-button logout-button">Sair</button>
+    </div>
+  </div>
+  
+  <!-- Marca d'água do título -->
+  <div class="watermark-title" id="watermarkTitle">AI LotoBot</div>
+
+  <div class="circuit-bg"></div>
+  <div class="code-lines" id="code-lines"></div>
+  <div class="energy-circles" id="energy-circles"></div>
+
+  <h1><span class="ia-badge">IA</span>AI LotoBot</h1>
+
+  <div class="container">
+    <div class="update-button-container">
+      <div class="update-button-bg"></div>
+      <button id="updateButton">Atualizar Resultados</button>
+    </div>
+
+    <div class="last-update" id="last-update">Última atualização: Nunca</div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="lottery-buttons">
+      <button id="megaSenaButton" class="lottery-button pulse-button active" data-lottery="Mega-Sena">Mega-Sena</button>
+      <button id="lotofacilButton" class="lottery-button pulse-button" data-lottery="Lotofácil">Lotofácil</button>
+      <button id="lotomaniaButton" class="lottery-button pulse-button" data-lottery="Lotomania">Lotomania</button>
+      <input type="hidden" id="lottery" value="Mega-Sena">
+    </div>
+
+    <input type="number" id="numGames" value="10" min="1" max="100" placeholder="Número de jogos">
+
+    <div class="model-toggle">
+      <label class="switch">
+        <input type="checkbox" id="useAI" checked>
+        <span class="slider"></span>
+      </label>
+      <span>Usar modelo de IA (LSTM)</span>
+    </div>
+
+    <div class="button-group">
+      <button id="generateButton">Gerar Jogos</button>
+      <button id="clearButton" class="clear-button pulse-button">Limpar</button>
+      <button id="checkGamesButton">Conferir Jogos</button>
+    </div>
+
+    <div class="logs" id="logs"></div>
+  </div>
+
+  <!-- Robô LSTM Lotobot -->
+  <div class="robot-container" id="robotContainer">
+    <div class="robot" id="lstmRobot">
+      <!-- Nome do robô -->
+      <div class="robot-name">LSTM Lotobot</div>
+      
+      <!-- Balão de fala -->
+      <div class="robot-speech" id="robotSpeech">Olá! Sou o LSTM Lotobot!</div>
+      
+      <!-- Cabeça -->
+      <div class="robot-head">
+        <div class="robot-antenna"></div>
+        <div class="robot-eye left"></div>
+        <div class="robot-eye right"></div>
+      </div>
+      
+      <!-- Corpo -->
+      <div class="robot-body">
+        <div class="robot-panel">
+          <div class="robot-led"></div>
+          <div class="robot-led"></div>
+          <div class="robot-led"></div>
+          <div class="robot-led"></div>
+        </div>
+      </div>
+      
+      <!-- Braços -->
+      <div class="robot-arm left"></div>
+      <div class="robot-arm right"></div>
+      
+      <!-- Pernas -->
+      <div class="robot-leg left"></div>
+      <div class="robot-leg right"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
+
+  <script>
+    // FUNÇÃO PARA VALIDAR TOKEN COM VERIFICAÇÃO DE REVOGAÇÃO
+    function validateTokenWithAdmin() {
+      const currentToken = localStorage.getItem('lotobot_token');
+      if (!currentToken) return false;
+      
+      // SE FOR ADMIN, não verificar na lista (admin usa chave fixa)
+      const isAdmin = localStorage.getItem('isAdmin');
+      if (isAdmin === 'true') {
+        return true; // Admin sempre válido
+      }
+      
+      // APENAS para tokens de usuário comum ()
+      if (!currentToken.startsWith('TOKEN_')) {
+        return true; // Não é um token gerado pelo sistema, não deixar passar
+      }
+      
+      // Verificar se o token de usuário existe na lista de tokens válidos do admin
+      const adminTokens = localStorage.getItem('admin_tokens');
+      if (!adminTokens) return true; // Se não há lista, deixar passar
+      
+      try {
+        const validTokens = JSON.parse(adminTokens);
+        
+        // Se o token não está na lista de tokens válidos, foi revogado
+        if (!validTokens[currentToken]) {
+          // Token foi revogado, fazer logout
+          localStorage.removeItem('lotobot_token');
+          localStorage.removeItem('lotobot_token_expiry');
+          localStorage.removeItem('lotobot_user_plan');
+          
+          alert('Seu token foi revogado pelo administrador. Você será redirecionado para o index.');
+          window.location.href = 'index.html';
+          return false;
+        }
+      } catch (error) {
+        console.error('Erro ao verificar tokens:', error);
+        return true; // Em caso de erro, deixar passar
+      }
+      
+      return true;
+    }
+
+    // Verificar autenticação ao carregar a página
+    document.addEventListener('DOMContentLoaded', function() {
+      // PRIMEIRA VERIFICAÇÃO: Token válido e não revogado
+      if (!validateTokenWithAdmin()) return;
+      
+      // Verificar se o usuário está autenticado
+      const storedToken = localStorage.getItem('lotobot_token');
+      const tokenExpiry = localStorage.getItem('lotobot_token_expiry');
+      const isAdmin = localStorage.getItem('isAdmin');
+      
+      // Verificar se o token é válido
+      if (!storedToken || !tokenExpiry || new Date(tokenExpiry) <= new Date()) {
+        // Token inválido ou expirado, redirecionar para index
+        window.location.href = 'index.html';
+        return;
+      }
+      
+      // Mostrar botão de admin se for administrador
+      if (isAdmin === 'true') {
+        document.getElementById('adminBtn').style.display = 'inline-block';
+      }
+      
+      // Configurar botões de autenticação
+      document.getElementById('adminBtn').addEventListener('click', function() {
+        window.location.href = 'admin.html';
+      });
+      
+      
+      });
+      
+      
+    
+      const CONFIGS = {
+      'Mega-Sena': {numbers: 6, maxNum: 60, minNum: 1, apiId: 'megasena', fileName: 'mega_sena_results.json'},
+      'Lotofácil': {numbers: 15, maxNum: 25, minNum: 1, apiId: 'lotofacil', fileName: 'lotofacil_results.json'},
+      'Lotomania': {numbers: 50, maxNum: 100, minNum: 0, apiId: 'lotomania', fileName: 'lotomania_results.json'},
+    };
+    
+
+    // URLs da API da Caixa
+    const API_BASE_URL = 'https://servicebus2.caixa.gov.br/portaldeloterias/api';
+    const NUM_DRAWS = 70;
+
+    let progress = 0;
+
+    const addLog = (message) => {
+      const logs = document.getElementById('logs');
+      const timestamp = new Date().toLocaleTimeString();
+      logs.innerText += `[${timestamp}] ${message}\n`;
+      logs.scrollTop = logs.scrollHeight;
+    };
+
+    const updateProgress = (value) => {
+      progress = Math.min(100, value);
+      document.getElementById('progress-bar').style.width = `${progress}%`;
+    };
+
+    const setLastUpdate = (date) => {
+      document.getElementById('last-update').innerText = `Última atualização: ${new Date(date).toLocaleString()}`;
+    };
+
+    // Função para limpar os logs
+    function clearLogs() {
+      document.getElementById('logs').innerText = '';
+      addLog('Logs limpos.');
+    }
+
+    // Função para selecionar loteria
+    function selectLottery(lotteryName) {
+      document.getElementById('lottery').value = lotteryName;
+      
+      // Remover classe active de todos os botões
+      document.querySelectorAll('.lottery-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Adicionar classe active ao botão correto
+      document.querySelector(`[data-lottery="${lotteryName}"]`).classList.add('active');
+      
+      addLog(`Loteria selecionada: ${lotteryName}`);
+    }
+
+    // Função para formatar data no padrão brasileiro
+    function formatDate(dateString) {
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-BR');
+      } catch (error) {
+        return dateString;
+      }
+    }
+
+    // Função para buscar os resultados de uma loteria da API da Caixa
+    async function fetchLotteryResults(lottery) {
+      try {
+        const lotteryConfig = CONFIGS[lottery];
+        const apiId = lotteryConfig.apiId;
+        
+        addLog(`Buscando resultados para ${lottery}...`);
+        updateProgress(10);
+        
+        const response = await fetch(`${API_BASE_URL}/${apiId}`);
+        if (!response.ok) throw new Error(`Erro ao buscar dados: ${response.status}`);
+        
+        const latestData = await response.json();
+        const latestConcurso = latestData.numero;
+        
+        addLog(`Último concurso: ${latestConcurso}. Buscando histórico...`);
+        updateProgress(20);
+        
+        const results = [];
+        const startConcurso = Math.max(1, latestConcurso - NUM_DRAWS + 1);
+        
+        // Adicionar o último concurso
+        results.push(formatLotteryData(apiId, latestData));
+        
+        // Buscar os concursos anteriores em lotes
+        const concursosToFetch = [];
+        for (let i = latestConcurso - 1; i >= startConcurso; i--) {
+          concursosToFetch.push(i);
+        }
+        
+        const batchSize = 5;
+        const totalBatches = Math.ceil(concursosToFetch.length / batchSize);
+        
+        for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+          const batchStart = batchIndex * batchSize;
+          const batchEnd = Math.min(batchStart + batchSize, concursosToFetch.length);
+          const currentBatch = concursosToFetch.slice(batchStart, batchEnd);
+          
+          addLog(`Buscando lote ${batchIndex + 1}/${totalBatches}...`);
+          
+          const batchPromises = currentBatch.map(concurso =>
+            fetch(`${API_BASE_URL}/${apiId}/${concurso}`)
+              .then(resp => resp.ok ? resp.json() : null)
+              .catch(() => null)
+          );
+          
+          const batchResults = await Promise.all(batchPromises);
+          
+          batchResults.forEach(data => {
+            if (data) results.push(formatLotteryData(apiId, data));
+          });
+          
+          const progress = 20 + (80 * (batchIndex + 1) / totalBatches);
+          updateProgress(progress);
+          
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        results.sort((a, b) => parseInt(a.Concurso) - parseInt(b.Concurso));
+        
+        addLog(`Obtidos ${results.length} resultados`);
+        updateProgress(100);
+        
+        return results;
+      } catch (error) {
+        addLog(`Erro: ${error.message}`);
+        throw error;
+      }
+    }
+
+    // Função para formatar os dados da API da Caixa
+    function formatLotteryData(apiId, apiData) {
+      const formattedResult = {
+        Concurso: apiData.numero.toString(),
+        Data: formatDate(apiData.dataApuracao),
+      };
+      
+      apiData.dezenasSorteadasOrdemSorteio.forEach((dezena, index) => {
+        formattedResult[`Bola${index + 1}`] = dezena.toString().padStart(2, '0');
+      });
+      
+      return formattedResult;
+    }
+
+    // Função para salvar os resultados localmente e baixar o arquivo JSON
+    function saveResults(fileName, results) {
+      try {
+        // Salvar no localStorage para uso pelo gerador
+        localStorage.setItem(fileName, JSON.stringify(results));
+        localStorage.setItem(`${fileName}_lastUpdate`, new Date().toISOString());
+        
+        // Criar e baixar o arquivo JSON
+        const blob = new Blob([JSON.stringify(results, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+        
+        return true;
+      } catch (error) {
+        addLog(`Erro ao salvar: ${error.message}`);
+        return false;
+      }
+    }
+
+    // Função para atualizar resultados
+    async function updateAllLotteryResults() {
+      addLog('Iniciando atualização automática dos resultados...');
+      const steps = Object.keys(CONFIGS).length;
+      const stepValue = 100 / steps;
+      updateProgress(0);
+      
+      for (const lottery of Object.keys(CONFIGS)) {
+        const startTime = Date.now();
+        addLog(`Atualizando resultados de ${lottery}...`);
+        try {
+          // Buscar resultados da API da Caixa
+          const results = await fetchLotteryResults(lottery);
+          
+          // Salvar resultados localmente e baixar arquivo JSON
+          const saved = saveResults(CONFIGS[lottery].fileName, results);
+          
+          if (saved) {
+            addLog(`Resultados de ${lottery} salvos com sucesso!`);
+            
+            // Exibir o último resultado
+            if (results.length > 0) {
+              const latestResult = results[results.length - 1];
+              const numbers = Object.keys(latestResult)
+                .filter(key => key.startsWith('Bola'))
+                .map(key => latestResult[key])
+                .join(', ');
+              addLog(`Último resultado de ${lottery}: ${numbers} (Concurso: ${latestResult.Concurso}, Data: ${latestResult.Data})`);
+            }
+          } else {
+            addLog(`Erro ao salvar resultados de ${lottery}`);
+          }
+        } catch (error) {
+          addLog(`Erro ao atualizar ${lottery}: ${error.message}`);
+        }
+        addLog(`Tempo para atualizar resultados: ${(Date.now() - startTime) / 1000} segundos`);
+        updateProgress(progress + stepValue);
+      }
+      
+      const now = new Date().toISOString();
+      localStorage.setItem('lastUpdate', now);
+      setLastUpdate(now);
+      addLog('Atualização automática concluída.');
+    }
+
+    // Função para preparar os dados para o modelo LSTM
+function prepareDataForLSTM(results, lottery) {
+  const {numbers, maxNum, minNum = 1} = CONFIGS[lottery];
+  
+  // Extrair apenas os números sorteados de cada concurso
+  const sequences = results.map(result => {
+    const numbers = [];
+    for (let i = 1; i <= CONFIGS[lottery].numbers; i++) {
+      let num = parseInt(result[`Bola${i}`]);
+      if (!isNaN(num)) {
+        // Para Lotomania, garantir que está no range 0-99
+        if (lottery === 'Lotomania' && num === 100) {
+          num = 0;
+        }
+        numbers.push(num);
+      }
+    }
+    return numbers.sort((a, b) => a - b); // LINHA CORRIGIDA
+  });
+  
+  // Converter para one-hot encoding
+  const oneHotSequences = sequences.map(seq => {
+    const oneHot = Array(maxNum).fill(0);
+    seq.forEach(num => {
+      // Para Lotomania: índice direto (0-99), para outras: num-1
+      const index = lottery === 'Lotomania' ? num : num - 1;
+      if (index >= 0 && index < maxNum) {
+        oneHot[index] = 1;
+      }
+    });
+    return oneHot;
+  });
+
+  // Criar pares de entrada/saída para treinamento
+  const X = [];
+  const y = [];
+        
+  for (let i = 0; i < oneHotSequences.length - 1; i++) {
+    X.push(oneHotSequences[i]);
+    y.push(oneHotSequences[i + 1]);
+  }
+  
+  return {X, y, sequences};
+}
+
+
+    // Função para criar e treinar o modelo LSTM
+    async function trainLSTMModel(X, y, lottery) {
+      const {maxNum} = CONFIGS[lottery];
+      
+      addLog('Criando modelo LSTM...');
+      
+      // Converter para tensores do TensorFlow.js
+      const xsTensor = tf.tensor(X);
+      const ysTensor = tf.tensor(y);
+      
+      // Redimensionar para formato LSTM [amostras, timesteps, features]
+      const reshapedX = xsTensor.reshape([X.length, 1, maxNum]);
+      
+      // Criar modelo sequencial
+      const model = tf.sequential();
+      
+      // Adicionar camada LSTM
+      model.add(tf.layers.lstm({
+        units: 100,
+        returnSequences: false,
+        inputShape: [1, maxNum],
+        dropout: 0.3,
+        recurrentDropout: 0.3
+      }));
+      
+      // Adicionar camada de saída
+      model.add(tf.layers.dense({
+        units: maxNum,
+        activation: 'sigmoid'
+      }));
+      
+      // Compilar modelo
+      model.compile({
+        optimizer: tf.train.adam(0.01),
+        loss: 'binaryCrossentropy',
+        metrics: ['accuracy']
+      });
+      
+      addLog('Treinando modelo LSTM...');
+      updateProgress(0);
+      
+      // Treinar modelo
+      await model.fit(reshapedX, ysTensor, {
+        epochs: 70,
+        batchSize: 8,
+        callbacks: {
+          onEpochEnd: (epoch, logs) => {
+            if (epoch % 10 === 0) {
+              addLog(`Época ${epoch + 1}/100 - Perda: ${logs.loss.toFixed(4)}`);
+              updateProgress((epoch + 1));
+            }
+          }
+        }
+      });
+      
+      addLog('Treinamento concluído!');
+      updateProgress(100);
+      
+      return model;
+    }
+
+    // Função para gerar jogos usando o modelo LSTM com análise de frequência
+    async function generateGamesWithLSTM(model, lottery, numGames) {
+      const {numbers, maxNum} = CONFIGS[lottery];
+      
+      addLog(`Gerando ${numGames} jogos para ${lottery} usando IA e análise de frequência...`);
+      
+      // Carregar resultados anteriores
+      const resultsJson = localStorage.getItem(CONFIGS[lottery].fileName);
+      if (!resultsJson) {
+        addLog('Erro: Nenhum resultado encontrado. Por favor, atualize os resultados primeiro.');
+        return [];
+      }
+      
+      const results = JSON.parse(resultsJson);
+      
+      // Verificar se temos dados suficientes
+      if (results.length < 10) {
+        addLog('Aviso: Poucos resultados disponíveis. A precisão pode ser afetada.');
+      }
+      
+      addLog(`Analisando ${results.length} sorteios anteriores...`);
+      
+      // Calcular frequência de cada número
+      const frequency = Array(maxNum + 1).fill(0);
+      const recentWeight = Array(maxNum + 1).fill(0);
+      
+      // Dar mais peso aos sorteios mais recentes
+      results.forEach((result, idx) => {
+        const weight = Math.pow(0.98, results.length - idx - 1); // Peso exponencial decrescente
+        
+        for (let i = 1; i <= numbers; i++) {
+          const num = parseInt(result[`Bola${i}`]);
+          if (!isNaN(num)) {
+            frequency[num] += 1;
+            recentWeight[num] += weight;
+          }
+        }
+      });
+      
+      // Preparar dados para o modelo LSTM
+      const {sequences} = prepareDataForLSTM(results, lottery);
+      
+      // Criar jogos únicos
+      const games = [];
+      const uniqueGames = new Set();
+      let attempts = 0;
+      const maxAttempts = numGames * 5;
+      
+      while (games.length < numGames && attempts < maxAttempts) {
+        attempts++;
+        
+        // Escolher uma semente aleatória entre os últimos 10 resultados
+        const seedIndex = Math.floor(Math.random() * Math.min(10, sequences.length));
+        const seedResult = sequences[sequences.length - 1 - seedIndex];
+        
+        // Criar array one-hot da semente
+        const seedOneHot = Array(maxNum).fill(0);
+        seedResult.forEach(num => {
+          const index = lottery === 'Lotomania' ? num : num - 1;
+          if (index >= 0 && index < maxNum) {
+            seedOneHot[index] = 1;
+          }
+        });
+        
+        // Introduzir variação aleatória na semente
+        const numChanges = Math.floor(Math.random() * 6) + 3;
+        for (let j = 0; j < numChanges; j++) {
+          const pos = Math.floor(Math.random() * maxNum);
+          seedOneHot[pos] = seedOneHot[pos] === 0 ? 1 : 0;
+        }
+        
+        // Preparar entrada para o modelo
+        const input = tf.tensor(seedOneHot).reshape([1, 1, maxNum]);
+        
+        // Fazer previsão
+        const prediction = model.predict(input);
+        const probs = await prediction.data();
+        
+        // Combinar previsão do modelo com análise de frequência
+        const combinedScores = Array(maxNum).fill(0);
+
+        for (let i = 0; i < maxNum; i++) {
+          // Normalizar frequência
+          const freqScore = frequency[i + 1] / Math.max(...frequency);
+          // Normalizar peso recente
+          const recencyScore = recentWeight[i + 1] / Math.max(...recentWeight);
+          // Probabilidade do modelo
+          const modelScore = probs[i];
+          
+          // Combinar scores com mais aleatoriedade e menos overfitting
+          combinedScores[i] = (modelScore * 0.25) + (freqScore * 0.15) + (recencyScore * 0.15) + (Math.random() * 0.45);
+        } // ADICIONAR ESTA CHAVE DE FECHAMENTO
+        
+        // Converter para array de pares [número, score]
+        const numberScores = combinedScores.map((score, index) => {
+          const number = lottery === 'Lotomania' ? index : index + 1;
+          return [number, score];
+        });
+                
+        
+        
+        // Ordenar por score (decrescente)
+        numberScores.sort((a, b) => b[1] - a[1]);
+        
+        // Selecionar os números com maior score
+        const selectedNumbers = numberScores.slice(0, numbers).map(pair => pair[0]);
+        
+        // Ordenar números em ordem crescente
+        selectedNumbers.sort((a, b) => a - b);
+        
+        // Verificar se este jogo já existe
+        const gameKey = selectedNumbers.join(',');
+        
+        if (!uniqueGames.has(gameKey)) {
+          uniqueGames.add(gameKey);
+          games.push(selectedNumbers);
+          
+          // Formatar números com zero à esquerda
+          const formattedNumbers = selectedNumbers.map(num => num.toString().padStart(2, '0'));
+          
+          addLog(`Jogo ${games.length}: ${formattedNumbers.join(', ')}`);
+          updateProgress((games.length) * 100 / numGames);
+        }
+        
+        // Limpar tensores para evitar vazamento de memória
+        input.dispose();
+        prediction.dispose();
+      }
+      
+      if (games.length < numGames) {
+        addLog(`Aviso: Foram gerados apenas ${games.length} jogos únicos após ${attempts} tentativas.`);
+      }
+      
+      return games;
+    }
+
+    // Função para gerar jogos aleatórios (método original)
+    function generateRandomGames(lottery, numGames) {
+      const {numbers, maxNum, minNum = 1} = CONFIGS[lottery];
+      
+      addLog(`Gerando ${numGames} jogos aleatórios para ${lottery}...`);
+      
+      const games = [];
+      
+      for (let i = 0; i < numGames; i++) {
+        let game;
+        let isUnique = false;
+        
+        // Continuar gerando até obter um jogo único
+        while (!isUnique) {
+          game = new Set();
+          
+          // Gerar números aleatórios para o jogo
+          while (game.size < numbers) {
+            // Usar um algoritmo diferente para cada jogo para aumentar a aleatoriedade
+            const randomFactor = Math.random() + (i * 0.01);
+            const num = Math.floor(randomFactor * maxNum) + minNum;
+            game.add(num);
+          }
+          
+          // Converter para array e ordenar
+          const sortedGame = [...game].sort((a, b) => a - b);
+          
+          // Verificar se este jogo já existe na lista
+          isUnique = !games.some(existingGame =>
+            JSON.stringify(existingGame) === JSON.stringify(sortedGame)
+          );
+          
+          if (isUnique) {
+            games.push(sortedGame);
+          }
+        }
+        
+        // Formatar números com zero à esquerda
+        const formattedGame = games[i].map(num => num.toString().padStart(2, '0'));
+        
+        addLog(`Jogo ${i + 1}: ${formattedGame.join(', ')}`);
+        updateProgress((i + 1) * 100 / numGames);
+      }
+      
+      return games;
+    }
+
+    // Função para carregar resultados com fallback para API da Caixa
+    async function loadResults(lottery) {
+      try {
+        // Primeiro tenta carregar do localStorage
+        const resultsJson = localStorage.getItem(CONFIGS[lottery].fileName);
+        if (resultsJson) {
+          addLog(`Resultados de ${lottery} carregados do armazenamento local.`);
+          return JSON.parse(resultsJson);
+        }
+        
+        // Se não encontrar no localStorage, tenta buscar do backend
+        addLog(`Tentando buscar resultados de ${lottery} do backend...`);
+        try {
+          const response = await axios.get(
+            `https://lotobot-backend.onrender.com/results/${lottery}`,
+            {timeout: 10000} // Timeout de 10 segundos
+          );
+          
+          if (response.data.success) {
+            addLog(`Resultados de ${lottery} obtidos com sucesso do backend.`);
+            return response.data.data;
+          } else {
+            throw new Error("Backend retornou erro");
+          }
+        } catch (backendError) {
+          // Se falhar, tenta usar a API da Caixa diretamente como fallback
+          addLog(`Backend não respondeu. Tentando API da Caixa para ${lottery}...`);
+          
+          try {
+            // Buscar resultados diretamente da API da Caixa
+            const results = await fetchLotteryResults(lottery);
+            addLog(`Resultados de ${lottery} obtidos com sucesso da API da Caixa.`);
+            
+            // Salvar os resultados no localStorage para uso futuro
+            localStorage.setItem(CONFIGS[lottery].fileName, JSON.stringify(results));
+            
+            return results;
+          } catch (caixaError) {
+            addLog(`Erro no fallback para API da Caixa: ${caixaError.message}`);
+            throw new Error(`Não foi possível obter resultados para ${lottery}`);
+          }
+        }
+      } catch (error) {
+        addLog(`Erro ao carregar resultados de ${lottery}: ${error.message}`);
+        return [];
+      }
+    }
+
+    // Função para gerar jogos - MODIFICADA para armazenar os jogos gerados
+    async function generateGames() {
+      const lottery = document.getElementById('lottery').value;
+      const numGames = parseInt(document.getElementById('numGames').value);
+      const useAI = document.getElementById('useAI').checked;
+      
+      if (isNaN(numGames) || numGames < 1 || numGames > 100) {
+        addLog('Por favor, insira um número de jogos válido (1 a 100).');
+        return;
+      }
+      
+      try {
+        let games = [];
+        
+        if (useAI) {
+          // Usar modelo LSTM para gerar jogos
+          addLog(`Iniciando geração de ${numGames} jogos para ${lottery} usando IA...`);
+          
+          // Carregar resultados anteriores
+          const results = await loadResults(lottery);
+          if (results.length === 0) {
+            addLog('Erro: Nenhum resultado encontrado. Por favor, atualize os resultados primeiro.');
+            return;
+          }
+          
+          addLog(`Carregados ${results.length} resultados anteriores.`);
+          
+          // Preparar dados para o modelo
+          const {X, y} = prepareDataForLSTM(results, lottery);
+          
+          // Treinar modelo LSTM
+          const model = await trainLSTMModel(X, y, lottery);
+          
+          // Gerar jogos usando o modelo treinado
+          games = await generateGamesWithLSTM(model, lottery, numGames);
+        } else {
+          // Usar método aleatório original
+          games = generateRandomGames(lottery, numGames);
+        }
+        
+        // Armazenar os jogos gerados para conferência posterior
+        window.generatedGames = games;
+        
+        // Exportar para Excel com formatação correta
+        const wsData = games.map((game, index) => {
+          const row = {Jogo: index + 1};
+          game.forEach((num, i) => {
+            // Formatar TODOS os números com zero à esquerda
+            const formattedNum = num.toString().padStart(2, '0');
+            row[`Bola${i + 1}`] = formattedNum;
+          });
+          return row;
+        });
+        
+        const ws = XLSX.utils.json_to_sheet(wsData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, lottery);
+        XLSX.writeFile(wb, `${lottery}_jogos.xlsx`);
+        
+        addLog(`Arquivo ${lottery}_jogos.xlsx ge
+rado com sucesso!`);
+      } catch (error) {
+        addLog(`Erro ao gerar jogos: ${error.message}`);
+        console.error(error);
+      }
+    }
+
+    // Função para conferir jogos gerados contra resultados anteriores
+    async function checkGamesAgainstHistory() {
+      const lottery = document.getElementById('lottery').value;
+      
+      // Verificar se há jogos gerados
+      if (!window.generatedGames || window.generatedGames.length === 0) {
+        addLog('Nenhum jogo para conferir. Por favor, gere jogos primeiro.');
+        return;
+      }
+      
+      // Carregar resultados históricos
+      const resultsJson = localStorage.getItem(CONFIGS[lottery].fileName);
+      if (!resultsJson) {
+        addLog('Erro: Nenhum resultado histórico encontrado. Por favor, atualize os resultados primeiro.');
+        return;
+      }
+      
+      const historicalResults = JSON.parse(resultsJson);
+      
+      // Preparar dados para passar para a nova página
+      const checkData = {
+        lottery: lottery,
+        games: window.generatedGames,
+        historicalResults: historicalResults,
+        config: CONFIGS[lottery]
+      };
+      
+      // Salvar dados no localStorage para a nova página acessar
+      localStorage.setItem('checkData', JSON.stringify(checkData));
+      
+      // Abrir nova aba
+      window.open('check-results.html', '_blank');
+    }
+
+    // Carregar a última data de atualização
+    const lastUpdate = localStorage.getItem('lastUpdate');
+    if (lastUpdate) {
+      setLastUpdate(lastUpdate);
+    }
+
+    // Event listeners
+    document.getElementById('generateButton').addEventListener('click', generateGames);
+    document.getElementById('clearButton').addEventListener('click', clearLogs);
+    document.getElementById('checkGamesButton').addEventListener('click', checkGamesAgainstHistory);
+    document.getElementById('updateButton').addEventListener('click', updateAllLotteryResults);
+
+    // Event listeners para os botões de loteria
+    document.querySelectorAll('.lottery-button').forEach(button => {
+      button.addEventListener('click', function() {
+        const lottery = this.getAttribute('data-lottery');
+        selectLottery(lottery);
+      });
+    });
+
+    // Selecionar Mega-Sena por padrão
+    selectLottery('Mega-Sena');
+
+    // Função para animar o robô
+    function animateRobot() {
+      const robot = document.getElementById('lstmRobot');
+      const speech = document.getElementById('robotSpeech');
+      const eyes = document.querySelectorAll('.robot-eye');
+      const leds = document.querySelectorAll('.robot-led');
+      
+      // Animação de piscar dos olhos
+      setInterval(() => {
+        eyes.forEach(eye => {
+          eye.style.height = '2px';
+          setTimeout(() => {
+            eye.style.height = '12px';
+          }, 150);
+        });
+      }, 3000);
+      
+      // Animação dos LEDs
+      let ledIndex = 0;
+      setInterval(() => {
+        leds.forEach((led, index) => {
+          led.style.backgroundColor = index === ledIndex ? '#00ff00' : '#333';
+        });
+        ledIndex = (ledIndex + 1) % leds.length;
+      }, 500);
+      
+      // Frases do robô
+      const phrases = [
+        'Analisando padrões...',
+        'Processando dados históricos...',
+        'Calculando probabilidades...',
+        'IA LSTM ativa!',
+        'Gerando previsões...',
+        'Otimizando algoritmos...',
+        'Pronto para gerar jogos!',
+        'Sistema neural funcionando!'
+      ];
+      
+      // Trocar frases periodicamente
+      setInterval(() => {
+        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+        speech.textContent = randomPhrase;
+        
+        // Animação de fala
+        speech.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+          speech.style.transform = 'scale(1)';
+        }, 200);
+      }, 5000);
+    }
+
+    // Iniciar animações do robô
+    animateRobot();
+
+    // Função para mostrar/ocultar o robô
+    function toggleRobot() {
+      const robotContainer = document.getElementById('robotContainer');
+      const isVisible = robotContainer.style.display !== 'none';
+      
+      if (isVisible) {
+        robotContainer.style.display = 'none';
+        addLog('Robô LSTM ocultado.');
+      } else {
+        robotContainer.style.display = 'block';
+        addLog('Robô LSTM ativado!');
+      }
+    }
+
+    // Adicionar controle do robô via teclado (tecla R)
+    document.addEventListener('keydown', function(event) {
+      if (event.key.toLowerCase() === 'r' && event.ctrlKey) {
+        event.preventDefault();
+        toggleRobot();
+      }
+    });
+
+    // Função para verificar se há atualizações disponíveis
+    async function checkForUpdates() {
+      try {
+        const lastUpdate = localStorage.getItem('lastUpdate');
+        if (!lastUpdate) return;
+        
+        const lastUpdateDate = new Date(lastUpdate);
+        const now = new Date();
+        const hoursSinceUpdate = (now - lastUpdateDate) / (1000 * 60 * 60);
+        
+        // Se passou mais de 24 horas desde a última atualização
+        if (hoursSinceUpdate > 24) {
+          addLog('⚠️ Dados podem estar desatualizados. Considere atualizar os resultados.');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar atualizações:', error);
+      }
+    }
+
+    // Verificar atualizações ao carregar a página
+    setTimeout(checkForUpdates, 2000);
+
+    // Função para salvar configurações do usuário
+    function saveUserSettings() {
+      const settings = {
+        defaultLottery: document.getElementById('lottery').value,
+        defaultNumGames: document.getElementById('numGames').value,
+        defaultUseAI: document.getElementById('useAI').checked
+      };
+      
+      localStorage.setItem('userSettings', JSON.stringify(settings));
+    }
+
+    // Função para carregar configurações do usuário
+    function loadUserSettings() {
+      try {
+        const settings = JSON.parse(localStorage.getItem('userSettings'));
+        if (settings) {
+          if (settings.defaultLottery) {
+            selectLottery(settings.defaultLottery);
+          }
+          if (settings.defaultNumGames) {
+            document.getElementById('numGames').value = settings.defaultNumGames;
+          }
+          if (settings.defaultUseAI !== undefined) {
+            document.getElementById('useAI').checked = settings.defaultUseAI;
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+      }
+    }
+
+    // Salvar configurações quando houver mudanças
+    document.getElementById('lottery').addEventListener('change', saveUserSettings);
+    document.getElementById('numGames').addEventListener('change', saveUserSettings);
+    document.getElementById('useAI').addEventListener('change', saveUserSettings);
+
+    // Carregar configurações ao inicializar
+    loadUserSettings();
+
+    // Função para mostrar estatísticas rápidas
+    function showQuickStats() {
+      const lottery = document.getElementById('lottery').value;
+      const resultsJson = localStorage.getItem(CONFIGS[lottery].fileName);
+      
+      if (!resultsJson) {
+        addLog('Nenhum dado disponível para estatísticas.');
+        return;
+      }
+      
+      const results = JSON.parse(resultsJson);
+      const {numbers, maxNum} = CONFIGS[lottery];
+      
+      // Calcular frequência dos números
+      const frequency = Array(maxNum + 1).fill(0);
+      
+      results.forEach(result => {
+        for (let i = 1; i <= numbers; i++) {
+          const num = parseInt(result[`Bola${i}`]);
+          if (!isNaN(num)) {
+            frequency[num]++;
+          }
+        }
+      });
+      
+      // Encontrar números mais e menos sorteados
+      let maxFreq = 0, minFreq = Infinity;
+      let mostDrawn = [], leastDrawn = [];
+      
+      for (let i = 1; i <= maxNum; i++) {
+        if (frequency[i] > maxFreq) {
+          maxFreq = frequency[i];
+          mostDrawn = [i];
+        } else if (frequency[i] === maxFreq) {
+          mostDrawn.push(i);
+        }
+        
+        if (frequency[i] < minFreq) {
+          minFreq = frequency[i];
+          leastDrawn = [i];
+        } else if (frequency[i] === minFreq) {
+          leastDrawn.push(i);
+        }
+      }
+      
+      addLog(`📊 Estatísticas de ${lottery}:`);
+      addLog(`Total de sorteios analisados: ${results.length}`);
+      addLog(`Números mais sorteados (${maxFreq}x): ${mostDrawn.join(', ')}`);
+      addLog(`Números menos sorteados (${minFreq}x): ${leastDrawn.join(', ')}`);
+    }
+
+    // Adicionar botão de estatísticas (você pode adicionar no HTML se quiser)
+    // Para agora, usar Ctrl+S para mostrar estatísticas
+    document.addEventListener('keydown', function(event) {
+      if (event.key.toLowerCase() === 's' && event.ctrlKey) {
+        event.preventDefault();
+        showQuickStats();
+      }
+    });
+
+    // Event listener para o botão Sair
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      if (confirm('Deseja realmente sair?')) {
+    localStorage.removeItem('lotobot_token');
+    localStorage.removeItem('lotobot_token_expiry');
+    localStorage.removeItem('lotobot_user_plan');
+    localStorage.removeItem('isAdmin');
+    window.location.href = 'index.html';
+  }
+});
+
+
+    // Adicionar informações de ajuda
+    addLog('💡 Dicas:');
+    addLog('• Ctrl+R: Mostrar/ocultar robô LSTM');
+    addLog('• Ctrl+S: Mostrar estatísticas rápidas');
+    addLog('• Use IA para análise avançada com redes neurais');
+    addLog('• Atualize os resultados regularmente para melhor precisão');
+    addLog('Bem-vindo ao AI LotoBot! Você está autenticado.');
+    
+    // Inicializar a animação da marca d'água
+    initWatermarkAnimation();
+    
+    // Função para animar a marca d'água
+    function initWatermarkAnimation() {
+      const watermark = document.getElementById('watermarkTitle');
+      if (!watermark) return;
+      
+      // Posições aleatórias a cada 3 segundos
+      setInterval(() => {
+        const maxX = window.innerWidth - 200;
+        const maxY = window.innerHeight - 100;
+        const randomX = Math.floor(Math.random() * maxX);
+        const randomY = Math.floor(Math.random() * maxY);
+        
+        watermark.style.left = randomX + 'px';
+        watermark.style.top = randomY + 'px';
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
